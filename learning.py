@@ -41,6 +41,7 @@ with tf.GradientTape() as tape:
     optimizer = tf.keras.optimizers.RMSprop(0.001)  # 创建优化器，指定学习率
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 '''
+'''
 # 创建标量
 a = tf.constant(1.2)
 print(type(a), tf.is_tensor(a))
@@ -57,4 +58,11 @@ print(a,a.shape)
 # 定义字符串
 a = tf.constant("Hello, Deep Learning.")
 print(a,a.shape)
+
+x = tf.random.normal([2,4]) # 2个样本，特征长度为4的张量
+w = tf.ones([4,3]) # 定义W张量
+b = tf.zeros([3]) # 定义b张量
+o = x@w+b # X@W+b运算'''
+x = tf.random.normal([4,32,32,3])
+print(x[0,:])
 
