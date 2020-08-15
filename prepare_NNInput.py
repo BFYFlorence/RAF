@@ -24,11 +24,12 @@ contact_dif = lc.ConDifPerFra(contact_pair)
 
 # print(contact_dif[0])
 
-contact_var = lc.ConStat(contact_dif)
+contact_var = lc.ConStat(contact_dif, False)
+print(contact_var)
 
 
 # print(contact_var)
-lc.ConSituPos_Var(contact_var)
+# lc.ConSituPos_Var(contact_var)
 
-# pos = range(92,100)
-# lc.ConDisTrend(contact_dif, pos)
+pos = [53]
+lc.ConDisTrend(contact_dif, pos)

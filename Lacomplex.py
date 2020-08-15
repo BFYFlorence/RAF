@@ -1,14 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import pandas as pd
 np.set_printoptions(suppress=True)                          # 取消科学计数显示
 class lacomplex:
     def __init__(self):
         self.LenPro = 328                                   # protein序列长度
         self.NumContactPair = 324                           # 给定contact数目
-        self.NumFrames = 20                                 # 总帧数
-        self.Interval = 100                                 # 取帧间隔
-        self.path = "./frames/"                             # 存储每一帧的文件夹
+        self.NumFrames = 5                                 # 总帧数
+        self.Interval = 100                                 # 取帧间隔,看帧的名称
+        # "/Users/erik/PycharmProjects/frames/NoIptgBindDna/"
+        self.frame_path = "/Users/erik/PycharmProjects/frames/"            # 存储每一帧的文件夹
+        self.name = "{0}ps.pdb"
+        self.fig_save_path = "./{0}.png"
         self._contact_pair = [(3, 118), (3, 141), (3, 142), (46, 139), (46, 141),
                               (47, 112), (47, 116), (47, 141), (48, 112), (48, 113),
                               (48, 114), (48, 115), (48, 116), (48, 117), (48, 118),
@@ -81,6 +85,7 @@ class lacomplex:
                               (284, 283), (285, 255), (293, 72), (294, 72)]
 
     def ReadCor_CA(self, path):
+        print("Reading:", path)
         A_atom = np.zeros(shape=(self.LenPro, 3))          # 残基序号-数组的索引=2
         B_atom = np.zeros(shape=(self.LenPro, 3))
         index = 0                                           # 向atom中添加A,B两条链坐标
@@ -127,7 +132,8 @@ class lacomplex:
     def ConDifPerFra(self, contact_pair):
         contact_dif = np.zeros(shape=(self.NumContactPair, self.NumFrames))
         for i in range(self.NumFrames):                             # 读取每一帧
-            A_atom, B_atom = self.ReadCor_CA(self.path+"{0}ps.pdb".format(str((i+1)*self.Interval)))
+            file = self.frame_path+self.name.format(str((i+1)*self.Interval))
+            A_atom, B_atom = self.ReadCor_CA(file)
             dis_array = self.CalContact(A_atom, B_atom)[0]
             for j in range(len(contact_pair)):                      # contact_dif与contact_pair的行意义相同
                                                                     # _contact_pair的顺序排列
@@ -135,7 +141,7 @@ class lacomplex:
             # print(contact_dif[0:10])
         return contact_dif
 
-    def ConStat(self, contact_dif):
+    def ConStat(self, contact_dif, save=False):
         # 0.min 1.max 2.diff 3.ave 4.var 5.pair1 6.pair2
         constat = np.zeros(shape=(self.NumContactPair,7))
         for i in range(self.NumContactPair):                        # 读取每一个_contact_pair
@@ -147,6 +153,11 @@ class lacomplex:
             constat[i][4] = np.var(record)
             constat[i][5] = self._contact_pair[i][0]
             constat[i][6] = self._contact_pair[i][1]
+        if save:
+            data_df = pd.DataFrame(constat)
+            writer = pd.ExcelWriter('./example.xlsx')
+            data_df.to_excel(writer, 'page_1', float_format='%.5f')  # float_format 控制精度
+            writer.save()
         return constat
 
     def ConDisTrend(self, contact_dif, pos):
@@ -155,12 +166,16 @@ class lacomplex:
         ax1.set_title('Figure', fontsize=20)
         ax1.set_xlabel('ps', fontsize=20)
         ax1.set_ylabel("dis", fontsize=20)
-        colors = list(mcolors.CSS4_COLORS.keys()) * 3  # 颜色变化
+
+        scatter_shape = ['o', '.', 'v', '^', 's', 'p', '*', '+']
+
         for i in range(self.NumContactPair):  # 按每个contact_pair绘图
-            print(i)
             if self._contact_pair[i][0] in pos:
+                print(self._contact_pair[i])
                 ax1.plot(range(self.Interval, self.Interval * (self.NumFrames + 1), self.Interval), contact_dif[i],
-                                 marker='o', color=mcolors.CSS4_COLORS[colors[i]])
+                        marker=scatter_shape[i%len(scatter_shape)], label=self._contact_pair[i])
+        plt.legend(loc='best')
+        plt.savefig(self.fig_save_path.format(pos[0]))
         plt.show()
 
     def ConSituPos_Var(self, constat):
