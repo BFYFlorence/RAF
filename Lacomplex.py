@@ -1,41 +1,56 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, optimizers, datasets
+import datetime
+import tensorboard
+import os
+import re
 
 np.set_printoptions(suppress=True)  # 取消科学计数显示
+# np.set_printoptions(threshold=np.inf)
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 class Lacomplex:
     def __init__(self):
-        # self.LenPro = 328  # protein序列长度
         self.contact_dis = 4.5  # 重原子之间的contact距离
-        # self.NumContactPair = 324  # 给定contact数目
 
-        self.startFrame = 1  # 首帧                           batchFrame2Dis    ConDifPerFra    extractFeat
-        self.endFrame = 20 + 1  # 末帧                        batchFrame2Dis    ConDifPerFra   extractFeat
-        self.set_name = 2  # 字典存储名称, 用于set和freq的存储    batchFrame2Dis
+        self.startFrame = 0  # 首帧                         batchFrame2Dis       ConDifPerFra    extractFeat
+        self.endFrame = 0 + 1  # 末帧                        batchFrame2Dis                ConDifPerFra   extractFeat
+        self.set_name = 1  # 字典存储名称, 用于set和freq的存储    batchFrame2Dis
+
+        # batchFrame2Dis     mergeSet    ConDifPerFra    averageDis    numperaa     aveDistribution
+        # extractFeat
+        self.csv_path = "./"  # 表格读取路径
+        self.frame_path = "./"  # 存储每一帧的文件夹             batchFrame2Dis
+
+        self.startSet = 1  # 字典起始                           mergeSet
+        self.endSet = 1+1  # 字典终止                           mergeSet
+
 
         self.Interval = 1  # 取帧间隔,看帧的名称
-        self.startSet = 1  # 字典起始                           mergeSet
-        self.endSet = 10+1  # 字典终止                           mergeSet
         self.Numset = 10  # 保存的集合文件数量
-        # self.NumFrames = 5000 + 1  # 总帧数
-        self.frame_read_path = "/home/liuhaiyan/fancao/work/consider_Tem/NoIptg_ProNoBindDna/md/no_restrain/frame/"  # 存储每一帧的文件夹
+        self.train_data_name = "Nobind"                      # extractFeat
+                                                        # batchFrame2Dis
 
         self.frame_name = "md{0}.pdb"  # 每一帧的名称
         self.csv_name = "{0}.csv"  # 每一张表的名称
 
         self.fig_save_path = "/Users/erik/Desktop/stat/NoIptg_ProNoBindDna/png/{0}.png"  # 图片保存路径
 
-        self.vmd_rmsd_path = "/Users/erik/Desktop/NoIptg_ProNoBindDna/"
-        self.rmsd_name = "trajrmsd.dat"
+        self.vmd_rmsd_path = "/Users/erik/Desktop/work/consider_tem/NoIptg_ProNoBindDna/"    # rmsd
+        self.rmsd_name = "restrain.dat"     # rmsd
 
-        self.csv_save_path = "/Users/erik/Desktop/NoIptg_ProBindDna/csv/"
-        self.csv_read_path = "/Users/erik/Desktop/NoIptg_ProBindDna/csv/"
-        # self.csv_save_path = "/home/liuhaiyan/fancao/work/consider_Tem/NoIptg_ProNoBindDna/md/no_restrain/csv/"  # 表格保存路径
-        # self.csv_read_path = "/home/liuhaiyan/fancao/work/consider_Tem/NoIptg_ProNoBindDna/md/no_restrain/csv/"  # 表格读取路径
+        # self.csv_save_path = "/home/liuhaiyan/fancao/work/cut_DNABindDomain/NoIptg_ProNoBindDna/md/csv/"
+        # self.csv_read_path = "/home/liuhaiyan/fancao/work/cut_DNABindDomain/NoIptg_ProNoBindDna/md/csv/"
+        # self.csv_save_path = "/home/liuhaiyan/fancao/work/cut_DNABindDomain/NoIptg_ProBindDna/md/csv/"  # 表格保存路径
 
-        self.NNread = "/Users/erik/Desktop/NNread/"
+        # extractFeat
+        self.NNread = "./"
 
 
     @staticmethod
@@ -60,27 +75,38 @@ class Lacomplex:
         chain = ""
         with open(path, 'r') as f:
             for i in f.readlines():
-                record = i.strip().split()
+                record = i.strip()
                 if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
                     break
-                if record[0] != "ATOM":  # 检测ATOM起始行
+
+                atom = record[:4].strip()
+                if atom != "ATOM":  # 检测ATOM起始行
                     continue
-                current_chain = record[4]  # 获取chain_ID
-                if record[0] == "TER" or (current_chain != chain and index):  # 检测chain_ID的变化
+
+                serial = record[6:11].strip()  # 697
+                atname = record[12:16].strip()  # CA
+                resName = lc.processIon(record[17:20].strip())  # PRO
+                current_chain = record[21].strip()  # 获取chain_ID,A
+                resSeq = record[22:26].strip()  # 3
+                cor_x = record[30:38].strip()  # Å
+                cor_y = record[38:46].strip()
+                cor_z = record[46:54].strip()
+                element = record[76:78].strip()  # C
+
+                if atom == "TER" or (current_chain != chain and index):  # 检测chain_ID的变化
                     # 轨迹文件导出时没有TER行，所以由
                     # or后面条件辨别
                     index = 0
-                if record[-1] != "H" and current_chain == "A":
-                    xyz = [float(record[6]), float(record[7]), float(record[8])]
-                    # eg: 2-LYS-N
-                    name = record[5] + "-" + record[3] + "-" + record[2]
+
+                xyz = [float(cor_x), float(cor_y), float(cor_z)]
+                # eg: 2-LYS-N-697
+                name = resSeq + "-" + resName + "-" + atname + "-" + serial
+                if element != "H" and current_chain == "A":
                     a_atom_cor.append(xyz)
                     a_atom_nam.append(name)
                     index += 1
                     chain = current_chain
-                if record[-1] != "H" and current_chain == "B":
-                    xyz = [float(record[6]), float(record[7]), float(record[8])]
-                    name = record[5] + "-" + record[3] + "-" + record[2]
+                if element != "H" and current_chain == "B":
                     b_atom_cor.append(xyz)
                     b_atom_nam.append(name)
                     index += 1
@@ -104,163 +130,109 @@ class Lacomplex:
                 z_2 = pow(a_atom_cor[a][2] - b_atom_cor[b][2], 2)
                 dis = np.sqrt(x_2 + y_2 + z_2)
                 if dis <= self.contact_dis:  # 取小于等于4.5Å的原子对
-                    contact_pair.add((a_atom_nam[a], b_atom_nam[b]))  # 原子序号
+                    contact_pair.add((a_atom_nam[a], b_atom_nam[b]))  # 原子序号，先A后B
                 dis_array[b][a] = dis
         if save_dis:
             data_df = pd.DataFrame(dis_array)
-            # freq_df = pd.DataFrame(freq)
-            """
-            (2469, 2469)
-            0          1          2     ...       2466       2467       2468
-            0     40.215690  38.799513  38.018277  ...  55.750993  56.925883  55.454399
-            1     39.252392  37.844734  37.024317  ...  56.974233  58.151762  56.671630
-            2     39.794514  38.400652  37.532537  ...  58.215807  59.394124  57.907032
-            ...   ...        ...        ...        ...  ...        ...        ...
-            2466  63.778714  63.050834  64.112389  ...  29.071550  29.093775  29.225590
-            2467  64.947459  64.225658  65.292803  ...  29.094369  29.065833  29.258595
-            2468  63.581168  62.847028  63.901245  ...  29.504145  29.537295  29.692566
-            """
             data_df.columns = a_atom_nam  # 添加列标题
             data_df.index = b_atom_nam  # 添加索引
-
-            """
-            (2469, 2469)
-                              1-N-2-LYS  5-CA-2-LYS  ...  4989-OC1-329-THR  4990-OC2-329-THR
-            4991-N-2-LYS      40.215690   38.799513  ...         56.925883         55.454399
-            4995-CA-2-LYS     39.252392   37.844734  ...         58.151762         56.671630
-            ...               ...         ...        ...         ...               ...
-            9976-C-329-THR    63.778714   63.050834  ...         29.093775         29.225590
-            9977-OC1-329-THR  64.947459   64.225658  ...         29.065833         29.258595
-            9978-OC2-329-THR  63.581168   62.847028  ...         29.537295         29.692566
-            """
-            path = self.csv_save_path + self.csv_name.format(filename)
+            path = self.csv_path + self.csv_name.format(filename)
             print("Saving:", path)
             data_df.to_csv(path, float_format="%.5f")
-            # freq_df.to_csv(self.csv_save_path + "freq{0}.csv".format(self.dir_name), float_format="%.5f")
 
         return contact_pair
 
     def batchFrame2Dis(self):
         total_contact = set()
-        path = self.csv_read_path + self.csv_name.format(0)
-        # print("Reading:", path)
+        path = self.csv_path + self.csv_name.format(0)
         data_df = pd.read_csv(path)
-        # frequen = np.zeros(shape=(data_df.shape[0], data_df.shape[0]))
         a_atom_nam = data_df.columns[1:]
         b_atom_nam = data_df[data_df.columns[0]]
 
         for i in range(self.startFrame, self.endFrame):
             print(len(total_contact))
-            path = self.frame_read_path + self.frame_name.format(i * self.Interval)
+            path = self.frame_path + self.frame_name.format(i * self.Interval)
             a_atom_cor, b_atom_cor = self.readHeavyAtom(path)[:2]
             contact_pair = self.calContact(a_atom_cor, b_atom_cor, a_atom_nam=a_atom_nam,
                                                       b_atom_nam=b_atom_nam,
                                                       filename=i * self.Interval, save_dis=True)
             total_contact = total_contact | contact_pair
 
-        # freq_df = pd.DataFrame(frequen)
-        # freq_df.columns = a_atom_nam  # 添加列标题
-        # freq_df.index = b_atom_nam  # 添加索引
-        # freq_df.to_csv(self.csv_save_path + "freq{0}.csv".format(self.set_name), float_format="%.5f")
-        np.save(self.csv_save_path + "{0}.npy".format(self.set_name), total_contact)
-        # print(total_contact)
+        np.save(self.csv_path + "{0}.npy".format(self.set_name), total_contact)
 
     def mergeSet(self):
         total_contact = set()
         for i in range(self.startSet, self.endSet):
-            path = self.csv_read_path + "{0}.npy".format(i)
+            path = self.csv_path + "{0}.npy".format(i)
             contact = np.load(path, allow_pickle=True).item()
             total_contact = total_contact | contact
         print(total_contact)
-        np.save(self.csv_save_path + "total_contact", total_contact)
+        np.save(self.csv_path + "total_contact.npy", total_contact)
 
     def ConDifPerFra(self, save=None):
         #         列：原子对
         # 行：帧数
-        contact_pair = np.load(self.csv_save_path + "total_contact.npy", allow_pickle=True).item()
+        contact_pair = np.load(self.csv_path + "total_contact.npy", allow_pickle=True).item()
         contact_pair = list(contact_pair)
         contact_pair.sort()  # 保证contact_pair的一致性
-        # print(len(contact_pair))
         contact_dif = np.zeros(shape=(self.endFrame - self.startFrame, len(contact_pair)))
-        path = self.csv_read_path + self.csv_name.format(0)
+        path = self.csv_path + self.csv_name.format(0)
         data_df = pd.read_csv(path)
-        # a_atom_nam = data_df.columns[1:]
         b_atom_nam = data_df[data_df.columns[0]]
-        # a_atom_dir = {}
-        # b_atom_dir = {}
+
 
         for i in range(self.startFrame, self.endFrame):  # 读取每一帧对应的原子距离csv
-            # print(i)
-            path = self.csv_read_path + self.csv_name.format(i * self.Interval)  # 生成对应csv路径
-            # A_atom, B_atom = self.ReadCor_CA(path)  # 导出原子坐标
-            # dis_array = self.CalContact(A_atom, B_atom)[0]  # 计算原子距离矩阵
+            path = self.csv_path + self.csv_name.format(i * self.Interval)  # 生成对应csv路径
             data_df = pd.read_csv(path)
             data_df.index = b_atom_nam
-            # print(data_df)
-            # data_array = data_df.iloc[:, 1:].values
             for j in range(len(contact_pair)):
-                # print(j)
                 contact_dif[i-self.startFrame][j] = data_df[contact_pair[j][0]][contact_pair[j][1]]  # 先列再行
-                # print(contact_dif[0:10])
-            # print("done")
+
         if save:
             data_df = pd.DataFrame(contact_dif)
-            # print(data_df)
             data_df.columns = contact_pair
-            data_df.to_csv(self.csv_save_path + self.csv_name.format("contact_dif"), float_format="%.5f", )
+            data_df.to_csv(self.csv_path + self.csv_name.format("contact_dif"), float_format="%.5f", )
 
     def averageDis(self):
-        path = self.csv_read_path + self.csv_name.format("contact_dif")  # contact_dif
+        path = self.csv_path + self.csv_name.format("contact_dif")  # contact_dif
         contact_dif = pd.read_csv(path)
         ave_array = np.zeros(shape=(len(contact_dif.columns)-1,1))
-        # print(data_df[data_df.columns[1]])
-        # print(np.array(data_df[data_df.columns[1]]))
         for i in range(1, len(contact_dif.columns)):
             ave_array[i-1][0] = np.mean(np.array(contact_dif[contact_dif.columns[i]]))
-        # print(ave_array)
         ave_df = pd.DataFrame(ave_array)
         ave_df.columns = ["ave"]
         ave_df.index = contact_dif.columns[1:]
-        # print(ave_df)                                          average_dif
-        ave_df.to_csv(self.csv_save_path + self.csv_name.format("average_dif"), float_format="%.5f", )
-        # print()
+        #                                                   average_dif
+        ave_df.to_csv(self.csv_path + self.csv_name.format("average_dif"), float_format="%.5f", )
 
-    def aveTrend(self):                                 # average_dif
-        path = self.csv_read_path + self.csv_name.format("average_dif")
-        data_df = pd.read_csv(path)
-        # index = data_df[data_df.columns[0]]
-        print(data_df)
-        """
-                                          Unnamed: 0      ave
-        0       ('719-CG2-48-ILE', '6710-O-115-LEU')  4.76624
-        1      ('1756-CG-118-ARG', '5739-CB-50-ASN')  4.89212
-        2        ('1056-N-71-LEU', '6201-CB-81-ALA')  4.75326
-        3     ('3842-NH2-255-ARG', '9177-N-281-CYS')  4.91385
-        4      ('4234-CD-283-ILE', '8811-N-255-ARG')  4.23808
-        ..                                       ...      ...
-        956   ('4258-CG-285-PRO', '8824-NE-255-ARG')  4.13532
-        957  ('3901-OE1-259-GLU', '9944-NZ-327-LYS')  6.57973
-        958   ('1386-OG-93-SER', '6733-NE2-117-GLN')  5.65948
-        959  ('1768-NH2-118-ARG', '5342-CG1-24-VAL')  6.26458
-        960      ('1267-C-84-LYS', '6449-CE-98-MET')  4.75621
-        """
-        # print(data_df["ave"])
-        # print(len(np.array(data_df["ave"])))
-        # print(np.array(data_df["ave"]))
+    def numperaa(self):        # average_dif
+        path = self.csv_path + "whole_cp.npy"
+        cp = list(np.load(path, allow_pickle=True).item())
+        print(len(cp))
+        freq_array = [0]*(329-62+1)
+        for i in cp:
+            record = i[1].split('-')            # 0，1代表画A链还是B链
+            pos = int(record[0]) - 62
+            freq_array[pos] = freq_array[pos] + 1
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('Figure', fontsize=20)
-        ax1.set_xlabel('pair-serial', fontsize=20)
-        ax1.set_ylabel("ave-dis", fontsize=20)
-        ax1.plot(range(6439), np.array(data_df["ave"]))  #       ###############!!!!!!!
+        ax1.set_xlabel('pos', fontsize=20)
+        ax1.set_ylabel("freq", fontsize=20)
+        ax1.plot(range(62, 330), freq_array)  #       ###############!!!!!!!
         plt.show()
 
     def aveDistribution(self):                          # average_dif
-        path = self.csv_read_path + self.csv_name.format("average_dif")
+        path = self.csv_path + self.csv_name.format("average_dif")
         average_dif = pd.read_csv(path)
-        data = average_dif[average_dif.columns[1]]
-        print(np.array(data))
+        average_dif.index = average_dif[average_dif.columns[0]]
+        data = []
+        patern = re.compile("'(.*?)'")
+        for cp in average_dif.index:
+            result = re.findall(patern, cp)
+            # if result[0].split('-')[2] == 'CB' and result[1].split('-')[2] == 'CB': # 只取CB
+            data.append(average_dif[average_dif.columns[1]][cp])
         plt.hist(data, bins=50, facecolor="blue", edgecolor="black", alpha=0.7)
         plt.show()
 
@@ -284,7 +256,7 @@ class Lacomplex:
         ax1.plot(frame,rms)
         plt.show()
 
-    def processIon(self, aa):
+    def processIon(self, aa):   # 处理质子化条件
         if aa in ['ASP', 'ASH']:
             return 'ASP'
         if aa in ['HIS', 'HIE', 'HID', 'HIP']:
@@ -293,54 +265,132 @@ class Lacomplex:
 
     def extractFeat(self):
         train_data = []
-        # contact_li都是原始状态的残基名称，不再有ASH、HID等质子化名称
-        contact_li = list(np.load(self.NNread+"whole_cp.npy", allow_pickle=True).item())
+        # contact_li都是原始状态的残基名称，不再有ASH、HID等质子化名称 whole_cp
+        contact_li = list(np.load(self.NNread + "total_contact.npy", allow_pickle=True).item())
         contact_li.sort()  # 保证contact_pair顺序一致
-        print(contact_li)
+        # patern = re.compile("'(.*?)'")
+        # print(contact_li)
+
         for i in range(self.startFrame, self.endFrame):
-            csv_path = self.csv_read_path + self.csv_name.format(i * self.Interval)
+            csv_path = self.csv_path + self.csv_name.format(i * self.Interval)
             print("Reading",csv_path)
             dis_df = pd.read_csv(csv_path)
             print(dis_df)
-            col = dis_df.columns[1:]
             row = dis_df[dis_df.columns[0]]
-            new_col = ['Unamed']
-            new_row = []
+            dis_df.index = row
+            # dis_df.columns = new_col
 
-            for m in col:
-                record = m.split('-')
-                new_record = record[2] + '-' + record[3] + '-' + record[1]
-                new_col.append(new_record)
-
-            for n in row:
-                record = n.split('-')
-                new_record = record[2] + '-' + record[3] + '-' + record[1]
-                new_row.append(new_record)
-
-            dis_df.index = new_row
-            dis_df.columns = new_col
-            print(dis_df)
-            # print(dis_df)
-            # print(dis_df["1-N-2-LYS"]["5016-CD-3-PRO"])
-            # print(dis_df["1-N-2-LYS"])
             feat = []
             for cp in contact_li:
-                if cp[0][:3] != '109' and cp[1][:3] != '109':   # 两个初始结构在109位的残基不同
-                    print(cp)
-                    feat.append(dis_df[cp[0]][cp[1]])
+                # print(cp)
+                # if cp[0][:3] != '109': and cp[1][:3] != '109':   # 两个初始结构在109位的残基不同
+                # if cp[0].split('-')[2]=='CB' and cp[1].split('-')[2]=='CB':
+                feat.append(dis_df[cp[0]][cp[1]])   # 先列后行
             train_data.append(feat)  # 文件csv和数组索引差1
-
         train_array_x = np.array(train_data)
-        # print(contact_li[:10])
-        # print(train_array)
-        # print(train_array.shape)
+        # print(train_array_x)
+        np.save(self.NNread + "{0}.npy".format(self.train_data_name), train_array_x)
+
+    def norm(self, data):
+        # min-max标准化
+        min_val = np.min(data)
+        max_val = np.max(data)
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                data[i][j] = (data[i][j] - min_val) / (max_val - min_val)
+        return data
+
+    def mergetrain(self):
+        bind = np.load("./Bind.npy", allow_pickle=True)
+        nobind = np.load("./Nobind.npy", allow_pickle=True)
+        train = np.vstack((bind, nobind))
+        print(bind, nobind, train)
+        np.save("./train.npy", train)
 
 
+    def train(self, train_bool=None):
+        path = self.NNread + "CP_ALL/train.npy"
+        data = np.load(path, allow_pickle=True)    # 前1500是Bind，后1500是Nobind, (3000, 9394)
+        # print(data[0])
 
+        label = np.zeros(shape=(data.shape[0]))
+        label[:4500] = 1
+        # print(label.shape)
+        # train
+        train_x = np.vstack((data[:4000],data[4500:8500]))
+        lc.norm(train_x)
+
+        train_y = np.hstack((label[:4000],label[4500:8500]))
+
+        train_x = tf.convert_to_tensor(train_x, dtype=tf.float32)
+        train_y = tf.convert_to_tensor(train_y, dtype=tf.int32)
+
+        train_y = tf.one_hot(train_y, depth=2)
+        # print(train_x)
+        # print(train_y)
+
+        # validation
+        valid_x = np.vstack((data[4000:4500], data[8500:]))
+        valid_y = np.hstack((label[4000:4500], label[8500:]))
+
+        if train_bool:
+            # model
+            # 3800+ features
+            model = keras.Sequential([
+                layers.Dense(1024, activation='relu'),
+                layers.Dense(256, activation='relu'),
+                layers.Dense(64, activation='relu'),
+                layers.Dense(8, activation='relu'),
+                layers.Dense(2)
+            ])
+            log_dir = "/Users/erik/PycharmProjects/Lacomplex/train_log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            summary_writer = tf.summary.create_file_writer(log_dir)
+            optimizer = optimizers.Adam(learning_rate=0.00001)
+
+            train = tf.data.Dataset.from_tensor_slices((train_x, train_y)).batch(32).shuffle(32)
+            itrator = iter(train)
+
+            for i in range(5000000):
+                with tf.GradientTape() as tape:
+                    train = next(itrator)
+
+                    x = train[0]
+                    y = train[1]
+
+                    out = model(x)
+                    loss = tf.square(out-y)
+                    loss = tf.reduce_sum(loss) / x.shape[0]
+                    print("loss:", loss)
+
+                grads = tape.gradient(loss, model.trainable_variables)
+                optimizer.apply_gradients(zip(grads, model.trainable_variables))
+                with summary_writer.as_default():       # 显示tensorboard必须
+                    tf.summary.scalar("loss", float(loss), step=i)
+                model.save("/Users/erik/PycharmProjects/Lacomplex/model.5h")
+        else:
+            # print(valid_x[0])
+            model = keras.models.load_model("./CP_ALL/model.5h")
+            out = model(valid_x)
+            # print(out)
+
+            result = []
+            for i in out:
+                if i[0]>i[1]:
+                    result.append(0)
+                else:
+                    result.append(1)
+            print("predict:", len(result))
+            print("predict:", result[250:500])
+            print("ground_t:", valid_y)
+            error_num = 0
+            for p in range(len(result)):
+                if result[p]!=valid_y[p]:
+                    error_num += 1
+            print(error_num/len(result))
 
 lc = Lacomplex()
 # 0号帧
-# a_atom_cor, b_atom_cor, a_atom_nam, b_atom_nam = lc.readHeavyAtom(lc.frame_read_path+lc.frame_name.format(0))
+# a_atom_cor, b_atom_cor, a_atom_nam, b_atom_nam = lc.readHeavyAtom(lc.frame_path+lc.frame_name.format(0))
 # lc.calContact(a_atom_cor, b_atom_cor,a_atom_nam=a_atom_nam,b_atom_nam=b_atom_nam,filename=0,save_dis=True)
 
 # lc.batchFrame2Dis()
@@ -348,9 +398,11 @@ lc = Lacomplex()
 # lc.ConDifPerFra(save=True)
 # lc.averageDis()
 
-# lc.aveTrend()
+
+
+# lc.numperaa()
 # lc.aveDistribution()
-
 # lc.rmsd()
-
 lc.extractFeat()
+# lc.mergetrain()
+# lc.train(train_bool=False)
