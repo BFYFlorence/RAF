@@ -5,10 +5,12 @@ import tensorflow as tf
 from tensorflow.keras import layers, optimizers
 from matplotlib.pyplot import MultipleLocator
 import os
+import sys
 
 np.set_printoptions(suppress=True)  # 取消科学计数显示
-# np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf)
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Macos需要设为true
+os.environ["TF_CPP_MIN_LOG_LEVEL"]='2'
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
@@ -30,18 +32,22 @@ class Myacc(tf.keras.metrics.Metric):
     def update_state(self, y_true, y_pred, sample_weight=None):
         values = tf.cast(tf.equal(tf.argmax(y_true, axis=1, output_type=tf.int32),
                                   tf.argmax(y_pred, axis=1, output_type=tf.int32)), tf.int32)
-        # self.total = self.total+tf.shape(y_true)[0]
         self.total.assign_add(tf.shape(y_true)[0])
         self.count.assign_add(tf.reduce_sum(values))
 
     def result(self):
         return self.count / self.total
 
+    def reset_states(self):
+        # The state of the metric will be reset at the start of each epoch.
+        self.total.assign(0)
+        self.count.assign(0)
+
 
 class MyCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
-        if logs.get("val_myacc") > 0.95:
-            print("\nReached 95% accuracy so cancelling training!")
+        if logs.get("val_myacc") > 0.95 and logs.get("loss") < 0.1:
+            print("\n meet requirements so cancelling training!")
             self.model.stop_training = True
 
 
@@ -71,7 +77,7 @@ class Lacomplex:
 
         # self.fig_save_path = "/Users/erik/Desktop/stat/NoIptg_ProNoBindDna/png/{0}.png"  # 图片保存路径
 
-        self.vmd_rmsd_path = "/Users/erik/Desktop/work/cut_DNABindDomain/Iptg_ProNoBindDna/"  # rmsd
+        self.vmd_rmsd_path = "/Users/erik/Desktop/work/xiaohong/"  # rmsd
         self.stat_name = "potential.xvg"  # rmsd
 
         # self.csv_save_path = "/home/liuhaiyan/fancao/work/cut_DNABindDomain/NoIptg_ProNoBindDna/md/csv/"
@@ -386,6 +392,80 @@ class Lacomplex:
         # np.savetxt('./bind_var.csv', bind_var, delimiter=',', fmt="%.5f")
         # np.savetxt('./nobind_var.csv', nobind_var, delimiter=',', fmt="%.5f")
 
+    def PCA(self):
+        bind = np.load('./Bind.npy', allow_pickle=True)
+        bind = bind[500:]
+        nobind = np.load('./Nobind.npy', allow_pickle=True)
+        nobind = nobind[500:]
+
+        # print(bind.shape)
+        # print(nobind.shape)
+        meanVal = np.mean(bind, axis=0)  # 按列求均值，即求各个特征的均值
+        newData = bind - meanVal
+        # print(meanVal.shape)
+        covMat = np.cov(newData, rowvar=False)
+
+
+        eigVals, eigVects = np.linalg.eig(np.mat(covMat))
+
+        print(eigVals)
+
+        eigValIndice = np.argsort(eigVals)  # 对特征值从小到大排序,返回值为索引
+        # print(eigValIndice)
+
+        n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # 最大的n个特征值的下标
+        n_eigVect = eigVects[:, n_eigValIndice]  # 最大的n个特征值对应的特征向量
+        lowDDataMat = newData * n_eigVect  # 低维特征空间的数据
+        # print(lowDDataMat.shape)
+        reconMat = (lowDDataMat * n_eigVect.T) + meanVal  # 重构数据
+        # print(reconMat)
+        # print(covMat)
+
+    def LDA(self):
+        bind = np.load('./Bind.npy', allow_pickle=True)
+        bind = bind[500:]
+        nobind = np.load('./Nobind.npy', allow_pickle=True)
+        nobind = nobind[500:]
+
+        bind_mean = np.mean(bind, axis=0)  # (302,)
+        nobind_mean = np.mean(nobind, axis=0)  # (302,)
+
+        bind_cov = np.cov(bind-bind_mean, rowvar=False)
+        nobind_cov = np.cov(nobind - nobind_mean, rowvar=False)    # np.mat((nobind - nobind_mean).T) * np.mat(nobind - nobind_mean)/4499
+        # print(bind_cov)
+        # print(nobind_cov)
+
+        Sw = np.mat(bind_cov + nobind_cov)
+        w = Sw.I * np.mat(bind_mean-nobind_mean).T      # .I为求逆
+
+        bind_map = bind * w
+        nobind_map = nobind * w
+
+        print(bind_map)
+        print(nobind_map)
+        print((bind_map).shape)
+        print((nobind_map).shape)
+
+        print(np.where(bind_map==np.min(bind_map)))
+        print(np.where(nobind_map == np.max(nobind_map)))
+        # (array([4345]), array([0]))  第4345行，第0列
+        # (array([391]), array([0]))
+        print(bind_map[4345])
+        print(nobind_map[391])
+        print(w)
+
+
+        resemble = np.reshape(np.array(np.concatenate((bind * w, nobind * w), axis=0)), newshape=9000)
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Binary_categories', fontsize=20)
+        ax1.set_xlabel('scatter', fontsize=20)
+        ax1.set_ylabel("no meaning", fontsize=20)
+        ax1.scatter(np.array(bind * w), np.ones(shape=(4500,)), marker='x')
+        ax1.scatter(np.array(nobind * w), np.ones(shape=(4500,)), marker='+')
+        # plt.show()
+
     def rmsd(self):  # 单位为Å
         path = self.vmd_rmsd_path + self.rmsd_name
         frame = []
@@ -488,8 +568,57 @@ class Lacomplex:
         # print(bind, nobind, train)
         np.save("./train.npy", train)
 
-    def train(self):
-        for i in range(2, 3):  # 批量训练神经网络
+    def plotNNout(self):
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('probability', fontsize=20)
+        # ax1.set_xlabel('0', fontsize=20)
+        ax1.set_ylabel('probability', fontsize=20)
+        ax1.set_ylabel('frame', fontsize=20)
+
+        for i in range(1,8):
+            path = './models/{0}'.format(i)
+            model = tf.saved_model.load(path)
+            # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+            data_x = np.load('./Bind.npy', allow_pickle=True)[500:]
+            # print(data_x.shape)
+            data_x = self.norm(data_x)
+            data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+            out = model(data_x)
+            print(out)
+            ax1.plot(range(4500), out[:,1])
+
+        # ax1.plot([0, 1], [0, 1], color='black')
+        plt.show()
+
+    def protran(self):
+        result=[]
+        for i in range(1,21):
+            path = './models/{0}'.format(i)
+            model = tf.saved_model.load(path)
+            data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+            data_x = self.norm(data_x)
+            data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+            out = model(data_x)
+            mean_model = tf.reduce_mean(out[:,0])
+            result.append(mean_model)
+            print(mean_model)
+        print(result)
+        print("total_mean:", np.mean(result))
+
+        """fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('process', fontsize=20)
+        ax1.set_xlabel('frame', fontsize=20)
+        ax1.set_ylabel('probability to Nobind', fontsize=20)
+        ax1.plot(range(5000),out[:,0])
+
+        plt.show()"""
+
+    def train(self,
+              # i
+              ):
+        for i in range(7, 8):  # 批量训练神经网络
             path = self.NNread + "twostates_train.npy"  # 读取训练数据
             train_x = np.load(path, allow_pickle=True)  # 前4500是Bind，后4500是Nobind
             test_x = np.load('./iptg_nobind.npy', allow_pickle=True)  # 读取测试数据，5000
@@ -503,7 +632,6 @@ class Lacomplex:
             # print(dataset_x.shape)
 
             dataset_x = self.norm(dataset_x)
-
             dataset_y = np.concatenate((train_y, test_y))  # 合并标签，14000
 
             # train
@@ -512,19 +640,23 @@ class Lacomplex:
             dataset_y_onehot = tf.one_hot(dataset_y, depth=2, dtype=tf.int32)
 
             model = tf.keras.Sequential([  # 加个tf.就可以正常保存了！！！另外说一句，keras比tf慢了不止一点
-                layers.Dense(128, activation=tf.nn.relu),
-                layers.Dense(64, activation=tf.nn.relu),
-                layers.Dense(16, activation=tf.nn.relu),
-                layers.Dense(8, activation=tf.nn.relu),
+                layers.Dense(256, activation=tf.nn.tanh),
+                layers.Dense(128, activation=tf.nn.tanh),
+                layers.Dense(64, activation=tf.nn.tanh),
+                layers.Dense(32, activation=tf.nn.tanh),
+                layers.Dense(16, activation=tf.nn.tanh),
+                layers.Dense(8, activation=tf.nn.tanh),
+                layers.Dense(4, activation=tf.nn.tanh),
                 layers.Dense(2, activation=tf.nn.softmax)
             ])
+
             callbacks = MyCallback()
             model.compile(optimizer=optimizers.Adam(learning_rate=0.00001),
                           loss=tf.losses.binary_crossentropy,
                           metrics=[
                               Myacc()
                           ])
-            models_path = './models/{0}/'.format(i)  # saver保存路径
+            models_path = './models/'  # saver保存路径
             logs_dir = './logs/{0}/'.format(i)
             logs_train_dir = os.path.join(logs_dir, "train")
             logs_valid_dir = os.path.join(logs_dir, "valid")
@@ -537,38 +669,47 @@ class Lacomplex:
             model.fit(
                 dataset_x,
                 dataset_y_onehot,
-                epochs=30,
+                epochs=10000,
                 shuffle=True,
                 batch_size=100,
                 validation_split=5 / 14,
-                # validation_data=(dataset_x[9000:], dataset_y_onehot[9000:]),
+                # validation_data=(dataset_x[9000:], dataset_y[9000:]),
                 callbacks=[callbacks]
             )
 
-            tf.saved_model.save(model, models_path)
+            tf.saved_model.save(model, models_path+'{0}'.format(i))
 
-    def calaccrate(self, model, data_x, vali, info):
+    # 手动计算准确率
+    """def calaccrate(self, model, data_x, vali, info):
         out = model(data_x)
-
         result = tf.argmax(out, 1, output_type=tf.int32)
-        # print(result)
-        # print(vali)
         accuracy = tf.reduce_mean(tf.cast(tf.equal(result, vali), tf.float32))  # 保存行数
-        print("calaccrate:", accuracy)
+        print("calaccrate:", accuracy)"""
 
     def testmodels(self):
-        model = tf.saved_model.load("./modeltest")
+        model1 = tf.saved_model.load("./modelsset2/18")
+        # model2 = tf.saved_model.load("./models/2")
+        # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
 
-        data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
-        print(data_x.shape)
+        data_x = np.load('./Bind.npy', allow_pickle=True)[500:]
+
         data_x = self.norm(data_x)
         data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
 
-        label = np.zeros(shape=(data_x.shape[0]))
-        label = tf.convert_to_tensor(label, dtype=tf.int32)  # 必须是int64用于计算accuracy
+        # label = np.zeros(shape=(data_x.shape[0]))
+        # label = tf.convert_to_tensor(label, dtype=tf.int32)  # 必须是int64用于计算accuracy
+        out1 = model1(data_x)
+        # print(out)
+        # out2 = model2(data_x)
+        pro1 = out1[:,1]
+        # pro2 = out2[:, 0]
+        # print(pro1[3754])
+        # print(pro2[3754])
+        print(pro1)
+        print(np.where(pro1==np.min(pro1)))
 
-        self.calaccrate(model, data_x, label, "error_rate:")
 
+# print(sys.argv[1])
 
 lc = Lacomplex()
 # 0号帧
@@ -583,11 +724,15 @@ lc = Lacomplex()
 # lc.avedis()
 # lc.statistics()
 # lc.covariance()
+# lc.PCA()
+lc.LDA()
 
 # lc.numperaa()
 # lc.aveDistribution()
 # lc.rmsd()
 # lc.extractFeat()
 # lc.mergetrain()
-lc.train()
+# lc.train()
 # lc.testmodels()
+# lc.plotNNout()
+# lc.protran()

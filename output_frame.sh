@@ -1,7 +1,8 @@
-point=1
-point_max=100
-while [ ${point} -le ${point_max} ]
+start=1
+end=20
+while [ ${start} -le ${end} ]
 do
-echo 0 | gmx trjconv -s npt.tpr -f npt.trr -o ${point}ps.pdb -dump ${point} -tu ps
-point=$((${point}+1))
+echo ${start}
+/Users/erik/miniconda3/envs/python37/bin/python3 /Users/erik/PycharmProjects/Lacomplex/Lacomplex.py ${start}
+start=$((${start}+1))
 done
