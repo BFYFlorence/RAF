@@ -2,16 +2,16 @@ import os
 from multiprocessing import Pool
 from Lacomplex import Lacomplex
 # ---  man-made  -- #
-batch_name = 'iptg'
+batch_name = 'NoIptg_NoBind'
 
 lc = Lacomplex()
-frame_path  = './frame/'
-csv_path    = './csv/'
-ANN_path    = './ANN/'
-output_path = '../analyse/'
+# frame_path  = './frame/'
+csv_path    = './csv_new/'
+# ANN_path    = './ANN/'
+output_path = '../analyse_new/'
 
 
-for dir_name in [frame_path, csv_path, ANN_path, output_path]:
+for dir_name in [csv_path, output_path]:
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
 
@@ -23,7 +23,7 @@ frame_num = 5000
 lc.output = output_path
 lc.mergebothContact()
 
-# extractFeat
+"""# extractFeat
 lc.csv_path = csv_path
 lc.startFrame = 1
 lc.endFrame = 5000 + 1
@@ -44,9 +44,8 @@ lc.vmd_rmsd_path = './'
 lc.output = output_path
 lc.data_name = batch_name
 lc.statistics()
-
+"""
 # ConDifPerFra_CB
-lc.NNread = ANN_path
 lc.endFrame = 5000 + 1
 lc.startFrame = 1
 lc.csv_path = csv_path
@@ -56,8 +55,9 @@ lc.output = output_path
 lc.data_name = batch_name
 lc.ConDifPerFra_CB()
 
-# avedis
+"""# avedis
 lc.csv_path = csv_path
 lc.csv_name = '{0}.csv'
 lc.data_name = batch_name
 lc.avedis()
+"""

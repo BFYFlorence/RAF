@@ -1,11 +1,11 @@
 import os
 
 """Current working dir is ~/batch"""
-start_point = "200"
+start_point = "start_md111.pdb"
 
 batch_size = 1
-ppn = 4
-quene = "gpu"
+ppn = 28
+quene = "low"
 
 serial_num = [i for i in range(1, batch_size+1)]
 conf = '/home/liuhaiyan/fancao/test_output'
@@ -15,7 +15,12 @@ cwd = os.getcwd()
 
 for j in serial_num:
     os.system("mkdir {0}/{1}".format(cwd, j))
-    os.system("cp {0}/md.tpr {0}/{1}".format(cwd,j))
+    os.system("cp {0}/*.itp {0}/{1}".format(cwd,j))
+    os.system("cp {0}/topol.top {0}/{1}".format(cwd, j))
+    os.system("cp {0}/md.mdp {0}/{1}".format(cwd, j))
+    os.system("cp {0}/start.gro {0}/{1}".format(cwd, j))
+    os.system("gmx grompp -f {0}/{1}/md.mdp -c {0}/{1}/start.gro -r {0}/{1}/start.gro -p {0}/{1}/topol.top -o {0}/{1}/md.tpr".format(cwd, j))
+
     os.system("cp {0}/em.pbs {0}/{1}".format(cwd,j))
     os.system("cp {0}/em.pbs {0}/{1}/{2}.pbs".format(cwd, j, "LDA"))
     os.system("cp {0}/* {1}/{2}".format(conf, cwd, j))

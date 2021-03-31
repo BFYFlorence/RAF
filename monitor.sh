@@ -1,39 +1,22 @@
 #!/bin/bash
-while true
-do
 
-i=1
-first=first
-second=second
+# ls ./frame | while read line
+# do
+# stride ./frame/${line} >>./SASA/sasa_${line}
+# done
+md=md2
+serial=part0003
 
-while read -r line
-do
-s=$(echo "${line}" | cut -d ' ' -f 1)
+mkdir frame_pbc
 
-if [ ${i} -eq 1 ]
-then
-first=${s}
-fi
+echo 18 1 | gmx trjconv -s ${md}.tpr -f ${md}.${serial}.trr -o ./frame_pbc/md.pdb -sep -skip 1 -pbc mol -center -n center.ndx
 
-if [ ${i} -eq 2 ]
-then
-second=${s}
-fi
+~/miniconda3/envs/tf/bin/python3 DisDih.py
 
-i=$((i + 1))
+name=md_pbc_center_nw
+echo 18 1 | gmx trjconv -s ${md}.tpr -f ${md}.${serial}.trr -o ${name}.trr -skip 1 -b 1 -pbc mol -center -n center.ndx
 
-if [ ${i} -eq 3 ]
-then
-break
-fi
-done <<< "$(tail text.log -n 13)"
+echo 4 4 | gmx rms -s ${md}.tpr -f ${name}.trr -o rmsd.xvg -mw no
 
-if [ "${first}" = "Step" ]
-then
-echo "${second}"
+echo 4 4 | gmx rms -s ${md}.tpr -f ${name}.trr -o rmsd_weight.xvg -mw yes
 
-fi
-
-
-sleep 5
-done
