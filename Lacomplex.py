@@ -14,6 +14,13 @@
 # 对于副本交换的数据，追踪一段轨迹内遍历的温度是否均匀；还可以把同一个温度下的轨迹收集起来做聚类，与实验结果比较
 # 对于我的课题，可以去看一下两个局部极小的dih局部特征改变的都有哪些，把dih的分布画出来
 # 把REMD的轨迹求平均，大概就算跨了温度也无所谓
+# 温度副本交换MD一般来说低温度的要密集一些，高温的要稀疏一些
+# 对于一个副本经历的温度，看一下它的结构覆盖是否齐全，若是齐全的话就没必要那么高的温度，检查其收敛性，有没有一直保持在一个温度
+# 还可以检查一下回旋半径和二级结构的数量，监测其松散程度
+# 检查一下计算的效率，可能不需要那么多的核数
+# 质心的约束
+# 小红师姐的课题，对于为什么出现模拟崩溃的现象，有一种可能的原因是恒温器的问题，再进一步解释是质心运动，但是我现在还没搞懂速度缩放和温度控制之间的关系
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -125,9 +132,9 @@ class Lacomplex:
         self.hydrophilic_index = [36]
 
     def processIon(self, aa):  # 处理质子化条件
-        if aa in ['ASP', 'ASH', 'ASN']:
+        if aa in ['ASH', 'ASN']:
             return 'ASP'
-        if aa in ['HIS', 'HIE', 'HID', 'HIP']:
+        if aa in ['HIE', 'HID', 'HIP']:
             return 'HIS'
         return aa
 
@@ -389,7 +396,7 @@ class Lacomplex:
         result_A_psi = []
         result_B_phi = []
         result_B_psi = []
-        for i in range(5001):
+        for i in range(self.startFrame, self.endFrame):
             pdb_path = self.frame_path + "/md{0}.pdb".format(i)
             phi = self.gather_dihedral_atom(pdb_path, type="Phi")
             result_A_phi.append(phi[0][1:])   # 去除掉360，防止逆矩阵为奇异阵
@@ -478,7 +485,7 @@ class Lacomplex:
             dataframe.index = new_index
 
             # 构建含有CB的cp
-            for l in range(len(aa_contact)): # for this step, you need to sort the set
+            for l in range(len(aa_contact)):  # for this step, you need to sort the set
                 cp = aa_contact[l]
                 a_index = cp[0] + '-' + ['CB' if cp[0][-3:] != 'GLY' else 'CA'][0]
                 b_index = cp[1] + '-' + ['CB' if cp[1][-3:] != 'GLY' else 'CA'][0]
@@ -647,7 +654,7 @@ class Lacomplex:
         result_B_psi_nobind = np.squeeze(np.load(self.csv_path + 'result_B_psi_nobind.npy', allow_pickle=True))
         result_A_phi_nobind = np.squeeze(np.load(self.csv_path + 'result_A_phi_nobind.npy', allow_pickle=True))
         result_B_phi_nobind = np.squeeze(np.load(self.csv_path + 'result_B_phi_nobind.npy', allow_pickle=True))
-        # 数据组织形式：ack((result_A_phi_bind, result_A_psi_bind, result_B_phi_bind, result_B_psi_bind))
+        # 数据组织形式：(result_A_phi_bind, result_A_psi_bind, result_B_phi_bind, result_B_psi_bind)
         nobind = np.hstack((result_A_phi_nobind, result_A_psi_nobind, result_B_phi_nobind, result_B_psi_nobind))
 
         meanVal = np.mean(nobind, axis=0)  # 按列求均值，即求各个特征的均值
@@ -665,8 +672,9 @@ class Lacomplex:
         print(np.where(first_vect > 0.07)[0] % 267)
 
     def Distance(self):
-        bind = np.load(self.csv_path + 'bind.npy', allow_pickle=True)
-        nobind = np.load(self.csv_path + 'nobind.npy', allow_pickle=True)
+        bind = np.load(self.csv_path + 'bind_dis.npy', allow_pickle=True)
+        nobind = np.load(self.csv_path + 'nobind_dis.npy', allow_pickle=True)
+        print(bind.shape)
         # test = np.load(self.csv_path + 'iptg.npy', allow_pickle=True)
 
         bind_mean = np.mean(bind, axis=0)  # (340,)
@@ -694,10 +702,10 @@ class Lacomplex:
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('Binary_categories', fontsize=20)
-        ax1.set_xlabel('scatter', fontsize=20)
-        ax1.set_ylabel("no meaning", fontsize=20)
-        ax1.scatter(np.array(bind_map), np.ones(shape=(15000,)), marker='x')
-        ax1.scatter(np.array(nobind_map), np.ones(shape=(15000,)), marker='+')
+        ax1.set_xlabel('LDA_value_Dis', fontsize=20)
+        ax1.set_ylabel("frequency", fontsize=20)
+        ax1.hist(np.array(bind_map), bins=100)
+        ax1.hist(np.array(nobind_map), bins=100)
         # ax1.scatter(np.array(test_map), np.ones(shape=(5000,)), marker='D')
         # plt.savefig(self.output + '{0}_{1}.png'.format('LDA', self.data_name))
         plt.show()
@@ -767,6 +775,7 @@ class Lacomplex:
         # 数据组织形式：A_Phi, A_Psi, B_Phi, B_Psi
         bind = np.load("./bind_sc.npy", allow_pickle=True)
         nobind = np.load("./nobind_sc.npy", allow_pickle=True)
+        print(bind.shape)
 
         bind_mean = np.mean(bind, axis=0)  # (340,)
         nobind_mean = np.mean(nobind, axis=0)  # (340,)
@@ -795,15 +804,15 @@ class Lacomplex:
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('Binary_categories', fontsize=20)
-        ax1.set_xlabel('scatter', fontsize=20)
-        ax1.set_ylabel("no meaning", fontsize=20)
-        ax1.scatter(np.array(new_bind_map), np.ones(shape=(15003,)), marker='x')
-        ax1.scatter(np.array(new_nobind_map), np.ones(shape=(15003,)), marker='+')
+        ax1.set_xlabel('LDA_value_Dih', fontsize=20)
+        ax1.set_ylabel("frequency", fontsize=20)
+        ax1.hist(np.array(new_bind_map), bins=100)
+        ax1.hist(np.array(new_nobind_map), bins=100)
 
         plt.show()
-        np.save(self.csv_path + "w_dih.npy", w)
-        np.save("./dihedral_new_w.npy", new_w.T)
-        np.save("./dihedral_n_weightIndice_order.npy", n_weightIndice_order)
+        # np.save(self.csv_path + "w_dih.npy", w)
+        # np.save("./dihedral_new_w.npy", new_w.T)
+        # np.save("./dihedral_n_weightIndice_order.npy", n_weightIndice_order)
 
     def single_LDA_Dis(self, pdb_path, uni):
         a_atom_cor, b_atom_cor, a_atom_nam, b_atom_nam = self.readHeavyAtom(pdb_path)
@@ -834,15 +843,17 @@ class Lacomplex:
             b_rec = cp[1].split('-')
             a_atom = a_rec[0] + '-' + a_rec[1] + '-' + ['CB' if a_rec[1] != 'GLY' else 'CA'][0]
             b_atom = b_rec[0] + '-' + b_rec[1] + '-' + ['CB' if b_rec[1] != 'GLY' else 'CA'][0]
-            contact_dif[0][l] = data_df[a_atom][b_atom]  # 先列后行,索引需要减2
+            contact_dif[0][l] = data_df[a_atom][b_atom]
 
+        # np.save("./NPY_dis/{0}.npy".format(frame), contact_dif)
         w = np.load('./w_dis.npy', allow_pickle=True)
-
+        print(contact_dif)
+        print(contact_dif.shape)
         value = (np.mat(contact_dif) * w).tolist()[0][0]
         print(value)
         return value
 
-    def single_LDA_dih(self, pdb_path):
+    def single_LDA_dih(self, pdb_path, frame):
         # 行：每一帧
         # 列：每一个二面角
         result_A_phi = []
@@ -866,6 +877,7 @@ class Lacomplex:
         result = np.hstack((result_A_phi, result_A_psi, result_B_phi, result_B_psi))
 
         result = np.hstack((np.sin((result * np.pi) / 180), np.cos((result * np.pi) / 180)))
+        np.save("./NPY_dih/{0}.npy".format(frame), result)
 
 
         new_w = np.load('./dihedral_new_w.npy', allow_pickle=True)
@@ -873,7 +885,7 @@ class Lacomplex:
         new_sample = np.squeeze(result[:, n_weightIndice_order], axis=1)
 
         value = (np.mat(new_sample) * new_w).tolist()[0][0]
-        print(value)
+        # print(value)
         return value
 
 
@@ -1004,7 +1016,7 @@ class Lacomplex:
         # 读取
         path = self.output + "total_contact_{0}.npy".format(self.data_name)
         cp = list(np.load(path, allow_pickle=True).item())
-        # 排序 for what?
+        # 排序
         cp.sort()
         aa_cp = set()
         for i in cp:
@@ -1145,32 +1157,44 @@ class Lacomplex:
 
         for k in hydrophobic_index:
             if result[k] > hydrophobic_threshold:
+                print(k)
                 score -= 10
         for j in hydrophilic_index:
             if result[j] <= hydrophilic_threshold:
+                print(j)
                 score -= 10
 
-        # return score
-        return result
+        # return result
+        return score
 
     def sasa(self):
-        data = []
-        for i in range(1,50001):
-            path = self.vmd_rmsd_path + "SASA/sasa_md.pdb." + str(i)
-            data.append(self.sasa_sf(path))
+        """path_dir = "/Users/erik/Desktop/MD_WWN/REMD/SASA/"
+        num = 16
+        series = dict()
 
-        """fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-                ax1 = fig.add_subplot(1, 1, 1)
-                ax1.set_title('score', fontsize=20)
-                ax1.set_xlabel('', fontsize=20)
-                ax1.set_ylabel("score", fontsize=20)
-                ax1.plot(range(1,50001), data)  # ###############!!!!!!!
+        for i in range(1,num+1):
+            for j in range(1, 2001):
+                path = path_dir + "{0}/sasa_md.pdb.{1}".format(i, j)
+                if str(i) not in series.keys():
+                    series[str(i)] = [self.sasa_sf(path)]
+                else:
+                    series[str(i)].append(self.sasa_sf(path))
+        np.save("./REMD_16_SASA.npy", series)"""
 
-                # plt.savefig('sasa.png')
-                print(np.where(np.array(data) == 110))
-                plt.show()"""
+        num = 16
+        series = np.load("./REMD_16_SASA.npy", allow_pickle=True).item()
 
-        return np.array(data)
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, num + 1):
+            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1.set_title('score of REMD', fontsize=2)
+            ax1.set_xlabel('frames(5ps/f)', fontsize=2)
+            ax1.set_ylabel("score", fontsize=2)
+            ax1.scatter(range(2000), series[str(k)], s=.1)
+
+        plt.show()
+
+        return np.array(series)
 
 
     def relative_SASA(self, aa_name, SASA):
@@ -1178,44 +1202,56 @@ class Lacomplex:
 
     def sasa_cluster(self):
         result = []
-        for i in range(1, 16):
-            result.append(self.sasa_sf("./SASA_cluster/sasa_cluster_{0}.pdb".format(i)))
+        num = 15
+        for i in range(1, num+1):
+            result.append(self.sasa_sf("/Users/erik/Desktop/MD_WWN/SASA/sasa_cluster_{0}.pdb".format(i)))
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('Q35', fontsize=20)
+        ax1.set_title('clusters in paper', fontsize=20)
         ax1.set_xlabel('cluster_serial', fontsize=20)
-        ax1.set_ylabel("SAI", fontsize=20)
-        ax1.plot(range(15), result)  # ###############!!!!!!!
+        ax1.set_ylabel("score", fontsize=20)
+        ax1.scatter([i for i in range(1, num+1)], result)  # ###############!!!!!!!
 
         # plt.savefig('sasa.png')
         plt.show()
 
-    def dihdis_trend(self):
-        path = "/Users/erik/Desktop/Pareto/reverse/5th/"
-        dis = []
-        dih = []
+    def dihdis_trend(self): # reverse 3; forward 1  4.24
 
-        for i in range(1, 11):
-            dis_value = np.load(path + "dis_{0}.npy".format(i), allow_pickle=True)
-            dih_value = np.load(path + "dih_{0}.npy".format(i), allow_pickle=True)
+        target = "dih"
+        direction = "forward"
+        i_start = 1
+        i_end = 3
+        data = []
 
-            dis += dis_value.tolist()
-            dih += dih_value.tolist()
+        if target == "dis":
+            for i in range(i_start, i_end + 1):
+                path = "/Users/erik/Desktop/Pareto/{1}/{0}th/".format(i, direction)
+                for n in range(1, 11):
+                    dis_value = np.load(path + "dis_{0}.npy".format(n), allow_pickle=True)
+                    data += dis_value.tolist()
 
+        if target == "dih":
+            for i in range(i_start, i_end + 1):
+                path = "/Users/erik/Desktop/Pareto/{1}/{0}th/".format(i, direction)
+                for n in range(1, 11):
+                    dih_value = np.load(path + "dih_{0}.npy".format(n), allow_pickle=True)
+                    data += dih_value.tolist()
+
+        print(len(data))
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('dih_trend', fontsize=20)
+        ax1.set_title('{0}_trend'.format(target), fontsize=20)
         ax1.set_xlabel('frames', fontsize=20)
-        ax1.set_ylabel("dih", fontsize=20)
-        ax1.scatter(range(len(dih)), dih, s=.3)
+        ax1.set_ylabel(target, fontsize=20)
+        ax1.scatter(range(len(data)), data, s=.3)
 
         plt.show()
 
     def relative_sasa_statistics(self, aa):
         result = []
-        for k in range(5001):
-            path = "./SASA_cluster3/sasa_md" + str(k) + ".pdb"
+        for k in range(1, 5000):
+            path = "/Users/erik/Desktop/MD_WWN/test_100ns/SASA/sasa_md.pdb." + str(k)
             with open(path, 'r') as f:
                 for i in f.readlines():
                     record = i.strip()
@@ -1280,7 +1316,7 @@ class Lacomplex:
         print(atom_cor.shape)
 
     def Pareto_surface(self, average=False):
-        path = "/Users/erik/Desktop/Pareto/reverse/5th/"
+        path = "/Users/erik/Desktop/Pareto/reverse/6th/"
         dis = []
         dih = []
 
@@ -1381,28 +1417,28 @@ class Lacomplex:
         interval = 2500  # 每50ns更换颜色
 
 
-        for_i_start = 5
-        for_i_end = 5
+        for_i_start = 1
+        for_i_end = 1
         for_dis = []
         for_dih = []
         for_rms = []
 
         rev_j_start = 3
-        rev_j_end = 4
+        rev_j_end = 3
         rev_dis = []
         rev_dih = []
         rev_rms = []
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
 
         ax1 = fig.add_subplot(2, 1, 1)
-        ax1.set_title('Pareto_surface', fontsize=20)
+        ax1.set_title('', fontsize=20)
         ax1.set_xlabel('dis', fontsize=20)
         ax1.set_ylabel("dih", fontsize=20)
 
-        """ax2 = fig.add_subplot(2, 1, 2)
+        ax2 = fig.add_subplot(2, 1, 2)
         ax2.set_title('RMSD_forward', fontsize=20)
         ax2.set_xlabel('frames', fontsize=20)
-        ax2.set_ylabel("rmsd(Å)", fontsize=20)"""
+        ax2.set_ylabel("rmsd(Å)", fontsize=20)
 
         ax3 = fig.add_subplot(2, 1, 2)
         ax3.set_title('RMSD_reverse', fontsize=20)
@@ -1434,7 +1470,7 @@ class Lacomplex:
 
         for k in range(int(len(rev_dis)/interval)):
             ax1.scatter(rev_dis[interval*k:interval*(k+1)], rev_dih[interval*k:interval*(k+1)], s=.5)
-            ax3.plot(range(interval * k, interval * (k + 1)), rev_rms[interval * k:interval * (k + 1)])
+            # ax3.scatter(range(interval * k, interval * (k + 1)), rev_rms[interval * k:interval * (k + 1)], s=.2)
 
         for k in range(int(len(for_dis)/interval)):
             ax1.scatter(for_dis[interval*k:interval*(k+1)], for_dih[interval*k:interval*(k+1)], s=.5)
@@ -1522,11 +1558,15 @@ class Lacomplex:
         if os.path.exists("./temperatures.dat"):
             os.system("rm temperatures.dat")
         T = []
-        interval = (end-start)/replicas
+
+        k = np.log(np.power(end/start, 1/7))
+        print(k)
+
         with open("temperatures.dat", 'a') as f:
             for i in range(replicas):
-                T.append(i * interval + start)
-                f.write(str(i * interval + start) + "\n")
+                T.append(start*np.exp(k*i))
+                f.write("%.1f" % float(start*np.exp(k*i)))  # 保留一位小数, 并且保证温度指数间隔
+                f.write("\n")
 
         f.close()
         return T
@@ -1584,30 +1624,243 @@ class Lacomplex:
             else:
                 b += 1
 
+        print(a,b,c)
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('SASA', fontsize=20)
         ax1.set_xlabel('Resid', fontsize=20)
         ax1.set_ylabel("relative_SASA", fontsize=20)
-
+        ax1.bar(["<=0.36", "0.36<sasa<0.6", ">=0.6"], [a, b, c])
 
         plt.show()
 
-    def time_series_T(self):
-        path = "/Users/erik/PycharmProjects/Lacomplex/MD_WWN/3th/"
-        num = 16
-        temperatures = self.REMD_temperature_generation(310, 430, num)
-        for i in range(1, num+1):
-            series = dict()
-            with open(path+"remd.mdcrd.%03d" % i) as f:
-                for j in f.readlines():
-                    record = j.strip().split()
-                    if record[0] == "REMD":
-                        if record[-1] not in series.keys():
-                            pass
+    """def time_series_T(self):
+        path = "/Users/erik/Downloads/remd_output/"
+        num = 8
+        temperatures = self.REMD_temperature_generation(269.5, 570.9, num)
+        series = dict()
+        current_replica = 1
+        with open(path+"rem.log") as f:
+            for j in f.readlines():
+                record = j.strip().split()
+                if record[0] != "#":
+                    if float(record[-4]) == 317.50:
+                        print(record[0])
+                    if record[-4] not in series.keys():
+                        series[record[-4]] = [current_replica]
+                    else:
+                        series[record[-4]].append(current_replica)
+                    current_replica = (current_replica+1) % num
 
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('time series of replica exchange', fontsize=20)
+        ax1.set_xlabel('time(ps)', fontsize=20)
+        ax1.set_ylabel("Replica", fontsize=20)
+        ax1.scatter([k for k in range(1,1001)], series["%.2f" % temperatures[0]], s=.5)
 
+        plt.show()"""
 
+    def crdidx(self):  # 一个温度经历的所有通道
+        start = 1
+        end = 3
+
+        num = 10
+        exchanges = 10000 * (end - start + 1)
+        series = dict()
+        for p in range(1, num + 1):
+            series[str(p)] = []
+
+        for serial in range(start, end + 1):
+            path = "/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/{0}/crdidx.dat".format(serial)
+            with open(path, 'r') as f:
+                for i in f.readlines():
+                    record = i.strip().split()
+                    if record[0][0] != "#":
+                        for j in range(1, num + 1):
+                            series[str(j)].append(int(record[j]))
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, num + 1):
+            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1.set_title('time series of replica exchange', fontsize=2)
+            ax1.set_xlabel('time(ps)', fontsize=2)
+            ax1.set_ylabel("Replica", fontsize=2)
+            ax1.scatter(range(1, exchanges + 1), series[str(k)], s=.1)
+
+        plt.show()
+
+    def repidx(self):  # 一个通道经历的所有温度
+        start = 1
+        end = 3
+
+        num = 10
+        exchanges = 10000 * (end - start + 1)
+
+        series = dict()
+        for p in range(1, num + 1):
+            series[str(p)] = []
+
+        for serial in range(start, end + 1):
+            path = "/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/{0}/repidx.dat".format(serial)
+            with open(path, 'r') as f:
+                for i in f.readlines():
+                    record = i.strip().split()
+                    if record[0][0] != "#":
+                        for j in range(1, num + 1):
+                            series[str(j)].append(int(record[j]))
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, num + 1):
+            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1.set_title('time series of replica exchange', fontsize=2)
+            ax1.set_xlabel('time(ps)', fontsize=2)
+            ax1.set_ylabel("Replica", fontsize=2)
+            ax1.scatter(range(1, exchanges+1), series[str(k)], s=.1)
+
+        plt.show()
+
+    def REMD_average(self):
+        series = np.load("./REMD_16_SASA.npy", allow_pickle=True).item()
+        score = series["2"]  # 选取第二个副本
+        score_ave = []
+
+        for i in range(1, 21):
+            sum = 0
+            for j in range(100*(i-1), 100*i):
+                sum += score[j]
+            score_ave.append(sum/100)
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('average score of replica exchange', fontsize=20)
+        ax1.set_xlabel('frames', fontsize=20)
+        ax1.set_ylabel("score", fontsize=20)
+        ax1.bar([k for k in range(1, 21)], score_ave)
+        plt.show()
+
+    def dih_diff_feat(self):
+        for_i_start = 5
+        for_i_end = 5
+        dih = []
+
+        for i in range(for_i_start, for_i_end + 1):
+            path = "/Users/erik/Desktop/Pareto/forward/{0}th/".format(i)
+            for n in range(1, 11):
+                dih_value = np.load(path + "dih_{0}.npy".format(n), allow_pickle=True)
+                dih += dih_value.tolist()
+
+        state_1 = dih[:4000]
+        state_2 = dih[-4000:]
+
+    def disdihboth(self):
+        target = 'dih'
+        for_i_start = 1
+        for_i_end = 3
+        for_dis = []
+        for_dih = []
+        # for_rms = []
+
+        rev_j_start = 3
+        rev_j_end = 5
+        rev_dis = []
+        rev_dih = []
+        # rev_rms = []
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Pareto_surface', fontsize=20)
+        ax1.set_xlabel('frames', fontsize=20)
+        ax1.set_ylabel(target, fontsize=20)
+
+        for i in range(for_i_start, for_i_end + 1):
+            path = "/Users/erik/Desktop/Pareto/forward/{0}th/".format(i)
+            # for_rms += self.read_rmsd_gmx(path + "rmsd.xvg")
+            for n in range(1, 11):
+                dis_value = np.load(path + "dis_{0}.npy".format(n), allow_pickle=True)
+                dih_value = np.load(path + "dih_{0}.npy".format(n), allow_pickle=True)
+
+                for_dis += dis_value.tolist()
+                for_dih += dih_value.tolist()
+
+        for j in range(rev_j_start, rev_j_end + 1):
+            path = "/Users/erik/Desktop/Pareto/reverse/{0}th/".format(j)
+            # rev_rms += self.read_rmsd_gmx(path + "rmsd.xvg")
+            for n in range(1, 11):
+                dis_value = np.load(path + "dis_{0}.npy".format(n), allow_pickle=True)
+                dih_value = np.load(path + "dih_{0}.npy".format(n), allow_pickle=True)
+
+                rev_dis += dis_value.tolist()
+                rev_dih += dih_value.tolist()
+
+        for_dis, for_dih = self.resemble_average(for_dis, for_dih)
+        rev_dis, rev_dih = self.resemble_average(rev_dis, rev_dih)
+        if target == "dih":
+            ax1.scatter(range(len(rev_dih)), rev_dih, s=.5)
+            ax1.scatter(range(len(for_dih)), for_dih, s=.5)
+        if target == "dis":
+            ax1.scatter(range(len(rev_dis)), rev_dis, s=.5)
+            ax1.scatter(range(len(for_dis)), for_dis, s=.5)
+
+        plt.show()
+    def show_weigths(self):
+        w_dis = np.load("./w_dis.npy", allow_pickle=True)
+        w_dih = np.load("./w_dih.npy", allow_pickle=True)
+        aa_contact = list(np.load("./aa_contact.npy", allow_pickle=True).item())
+
+        for i in np.where(np.abs(w_dis)>20)[0]:
+            print(aa_contact[i])
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('', fontsize=20)
+        ax1.set_xlabel('feat_num', fontsize=20)
+        ax1.set_ylabel('weights', fontsize=20)
+        ax1.scatter(range(len(w_dih)), w_dih, s=5)
+        # plt.show()
+    def output_ATOMS(self):
+        a_name, b_name = self.readHeavyAtom("./md1.pdb",monitor=False)[2:]
+        aa_contact = list(np.load("./aa_contact.npy", allow_pickle=True).item())
+        aa_contact.sort()
+        with open("./ATOMS.dat", 'a') as file:
+            for item in range(len(aa_contact)):
+                input = "dist{0}: DISTANCE ATOMS={1},{2} NOPBC\n"
+                for a in a_name:
+                    contact = aa_contact[item][0].split('-')
+                    record = a.split('-')
+                    if record[0] == contact[0] and ((record[1] != "GLY" and record[2] == "CB") or ((record[1] == "GLY" and record[2] == "CA"))):
+                        a_num = int(record[-1])
+                for b in b_name:
+                    contact = aa_contact[item][1].split('-')
+                    record = b.split('-')
+                    if record[0] == contact[0] and ((record[1] != "GLY" and record[2] == "CB") or ((record[1] == "GLY" and record[2] == "CA"))):
+                        b_num = int(record[-1])
+                file.write(input.format(item+1, a_num, b_num))
+        file.close()
+
+    def output_TORSION(self):
+        with open("./torsion.dat", 'a') as file:
+            input_A_phi_sine = "phi_sine_A{0}: TORSION ATOMS=@phi-{1} SINE NOPBC\n"
+            input_A_psi_sine = "psi_sine_A{0}: TORSION ATOMS=@psi-{1} SINE NOPBC\n"
+            input_B_phi_sine = "phi_sine_B{0}: TORSION ATOMS=@phi-{1} SINE NOPBC\n"
+            input_B_psi_sine = "psi_sine_B{0}: TORSION ATOMS=@psi-{1} SINE NOPBC\n"
+
+            input_A_phi_cosine = "phi_cosine_A{0}: TORSION ATOMS=@phi-{1} COSINE NOPBC\n"
+            input_A_psi_cosine = "psi_cosine_A{0}: TORSION ATOMS=@psi-{1} COSINE NOPBC\n"
+            input_B_phi_cosine = "phi_cosine_B{0}: TORSION ATOMS=@phi-{1} COSINE NOPBC\n"
+            input_B_psi_cosine = "psi_cosine_B{0}: TORSION ATOMS=@psi-{1} COSINE NOPBC\n"
+            for i in range(1, 268):
+                file.write(input_A_phi_sine.format(i, i + 1))
+                file.write(input_A_psi_sine.format(i + 268, i + 1))
+                file.write(input_B_phi_sine.format(i + 268*2, i + 269))
+                file.write(input_B_psi_sine.format(i + 268*3, i + 269))
+                file.write(input_A_phi_cosine.format(i + 268 * 4, i + 1))
+                file.write(input_A_psi_cosine.format(i + 268 * 5, i + 1))
+                file.write(input_B_phi_cosine.format(i + 268 * 6, i + 269))
+                file.write(input_B_psi_cosine.format(i + 268 * 7, i + 269))
+
+        file.close()
 
 
     """def plotNNout(self):
@@ -1758,7 +2011,7 @@ lc = Lacomplex()
 
 # lc.sasa_sf('/Users/erik/PycharmProjects/Lacomplex/SASA/sasa_md4000.pdb')
 # print("$$$")
-# score = lc.sasa_sf('/Users/erik/Desktop/MD_WWN/test_100ns/SASA/sasa_md.pdb.17710')
+# score = lc.sasa_sf('/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/3/after_gather/repre_310.0K/rep6_sasa')
 # print(score)
 # lc.check_diff('./extract_cor.txt', './md26.pdb') # 注意，若是反向的话需要使用另一边的初始结构来读取原子名称
 # 0号帧
@@ -1788,7 +2041,7 @@ lc = Lacomplex()
 # lc.testmodels()
 # lc.plotNNout()
 # lc.protran()
-# lc.single_LDA_Dis("/Users/erik/PycharmProjects/Lacomplex/work1/md2000.pdb", "extract_cor")
+# lc.single_LDA_Dis("/Users/erik/PycharmProjects/Lacomplex/md3250.pdb", "extract_cor")
 # lc.single_LDA_dih("/Users/erik/PycharmProjects/Lacomplex/work1/md2000.pdb")
 # lc.LDA_trend()
 
@@ -1803,7 +2056,7 @@ lc = Lacomplex()
 
 # lc.process_pbc_cubic()
 # lc.rmsf_plot_amber()
-# lc.REMD_temperature_generation(310, 430, 16)
+# lc.REMD_temperature_generation(310, 400, 8)
 # lc.sasa_statistics()
 # lc.Distance()
 # lc.frame_path = "/home/caofan/work3/NoIptg_NoBind/frame_pbc"
@@ -1811,9 +2064,18 @@ lc = Lacomplex()
 # lc.sasa()
 
 # lc.Pathway()
-# lc.accept_ratios()
 # lc.aaNumSASA()
 
 # lc.time_series_T()
 # lc.dihdis_trend()
+# lc.disdihboth()
 # lc.rmsd_plot_gmx()
+
+# lc.repidx()  # 一个通道经历的所有温度
+# lc.crdidx()  # 一个温度经历的所有通道
+
+# lc.REMD_average()
+# lc.dih_diff_feat()
+# lc.show_weigths()
+# lc.output_ATOMS()
+lc.output_TORSION()

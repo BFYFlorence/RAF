@@ -25,7 +25,7 @@ nobind_B_Psi = [7,  40,  52,  56,  67,  78, 79,  93, 125, 156, 157, 171, 173, 17
 
 
 
-# print(position)
-# 340
-dataframe = pd.read_csv('./{0}.csv'.format("extract_cor"))
-print(dataframe)
+a = dict()
+a[{1,2}] = 2
+print(a[{2,1}])
+
