@@ -21,7 +21,6 @@
 # 质心的约束
 # 小红师姐的课题，对于为什么出现模拟崩溃的现象，有一种可能的原因是恒温器的问题，再进一步解释是质心运动，但是我现在还没搞懂速度缩放和温度控制之间的关系
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -29,6 +28,7 @@ import pandas as pd
 # from tensorflow.keras import layers, optimizers
 from matplotlib.pyplot import MultipleLocator
 import os
+from collections import defaultdict
 import __main__
 __main__.pymol_argv = ['pymol', '-qc']
 import pymol as pm
@@ -75,6 +75,141 @@ class MyCallback(tf.keras.callbacks.Callback):
             print("\n meet requirements so cancelling training!")
             self.model.stop_training = True
 """
+"""def plotNNout(self):
+    fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_title('probability', fontsize=20)
+    # ax1.set_xlabel('0', fontsize=20)
+    ax1.set_ylabel('probability', fontsize=20)
+    ax1.set_ylabel('frame', fontsize=20)
+
+    for i in range(1,8):
+        path = './models/{0}'.format(i)
+        model = tf.saved_model.load(path)
+        # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+        data_x = np.load('./iptg_nobind.npy', allow_pickle=True)[500:]
+        # print(data_x.shape)
+        data_x = self.norm(data_x)
+        data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+        out = model(data_x)
+        print(out)
+        ax1.plot(range(4500), out[:,1])
+
+    # ax1.plot([0, 1], [0, 1], color='black')
+    plt.show()
+
+def protran(self):
+    result=[]
+    for i in range(1,21):
+        path = './models/{0}'.format(i)
+        model = tf.saved_model.load(path)
+        data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+        data_x = self.norm(data_x)
+        data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+        out = model(data_x)
+        mean_model = tf.reduce_mean(out[:,0])
+        result.append(mean_model)
+        print(mean_model)
+    print(result)
+    print("total_mean:", np.mean(result))
+
+    fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_title('process', fontsize=20)
+    ax1.set_xlabel('frame', fontsize=20)
+    ax1.set_ylabel('probability to Nobind', fontsize=20)
+    ax1.plot(range(5000),out[:,0])
+
+    plt.show()
+
+def train(self,
+          # i
+          ):
+    for i in range(7, 8):  # 批量训练神经网络
+        path = self.ANN + "twostates_train.npy"  # 读取训练数据
+        train_x = np.load(path, allow_pickle=True)  # 前4500是Bind，后4500是Nobind
+        test_x = np.load('./iptg_nobind.npy', allow_pickle=True)  # 读取测试数据，5000
+
+        train_y = np.zeros(shape=(train_x.shape[0]))  # 设定标签，9000
+        train_y[:4500] = 1
+        test_y = np.zeros(shape=(test_x.shape[0]))  # 5000
+
+        # print(train_x.shape, test_x.shape)
+        dataset_x = np.concatenate((train_x, test_x), axis=0)  # 合并训练集和测试集，14000
+        # print(dataset_x.shape)
+
+        dataset_x = self.norm(dataset_x)
+        dataset_y = np.concatenate((train_y, test_y))  # 合并标签，14000
+
+        # train
+        dataset_x = tf.convert_to_tensor(dataset_x, dtype=tf.float32)
+        dataset_y = tf.convert_to_tensor(dataset_y, dtype=tf.int32)
+        dataset_y_onehot = tf.one_hot(dataset_y, depth=2, dtype=tf.int32)
+
+        model = tf.keras.Sequential([  # 加个tf.就可以正常保存了！！！另外说一句，keras比tf慢了不止一点
+            layers.Dense(256, activation=tf.nn.tanh),
+            layers.Dense(128, activation=tf.nn.tanh),
+            layers.Dense(64, activation=tf.nn.tanh),
+            layers.Dense(32, activation=tf.nn.tanh),
+            layers.Dense(16, activation=tf.nn.tanh),
+            layers.Dense(8, activation=tf.nn.tanh),
+            layers.Dense(4, activation=tf.nn.tanh),
+            layers.Dense(2, activation=tf.nn.softmax)
+        ])
+
+        callbacks = MyCallback()
+        model.compile(optimizer=optimizers.Adam(learning_rate=0.00001),
+                      loss=tf.losses.binary_crossentropy,
+                      metrics=[
+                          Myacc()
+                      ])
+        models_path = './models/'  # saver保存路径
+        logs_dir = './logs/{0}/'.format(i)
+        logs_train_dir = os.path.join(logs_dir, "train")
+        logs_valid_dir = os.path.join(logs_dir, "valid")
+
+        for dir_name in [logs_dir, logs_train_dir, logs_valid_dir, models_path]:
+            if not os.path.exists(dir_name):
+                os.mkdir(dir_name)
+        summary_writer = tf.summary.create_file_writer(logs_train_dir)
+
+        model.fit(
+            dataset_x,
+            dataset_y_onehot,
+            epochs=10000,
+            shuffle=True,
+            batch_size=100,
+            validation_split=5 / 14,
+            # validation_data=(dataset_x[9000:], dataset_y[9000:]),
+            callbacks=[callbacks]
+        )
+
+        tf.saved_model.save(model, models_path+'{0}'.format(i))
+
+
+def testmodels(self):
+    model1 = tf.saved_model.load("./modelsset2/18")
+    # model2 = tf.saved_model.load("./models/2")
+    # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+
+    data_x = np.load('./Bind.npy', allow_pickle=True)[500:]
+
+    data_x = self.norm(data_x)
+    data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+
+    # label = np.zeros(shape=(data_x.shape[0]))
+    # label = tf.convert_to_tensor(label, dtype=tf.int32)  # 必须是int64用于计算accuracy
+    out1 = model1(data_x)
+    # print(out)
+    # out2 = model2(data_x)
+    pro1 = out1[:,1]
+    # pro2 = out2[:, 0]
+    # print(pro1[3754])
+    # print(pro2[3754])
+    print(pro1)
+    print(np.where(pro1==np.min(pro1)))"""
+
+
 
 class Lacomplex:
     def __init__(self):
@@ -686,69 +821,19 @@ class Lacomplex:
 
         Sw = np.mat(bind_cov + nobind_cov)
         w = Sw.I * np.mat(bind_mean - nobind_mean).T  # .I为求逆
-        np.save(self.csv_path + "w_dis.npy", w)
-        bind_map = bind * w
-        nobind_map = nobind * w
-        # test_map = test * w
+        np.save("./dis100dih200/w_dis.npy", w)
 
-        w_abs = np.absolute(w)
-        w_sort = np.sort(w_abs, axis=0)
-        cv_index = np.where(w_abs > 10)
-        contact_li = list(np.load(self.csv_path + "aa_contact.npy", allow_pickle=True).item())
-        contact_li.sort()
-        cv = [contact_li[i] for i in cv_index[0]]
-        np.save(self.csv_path + "cv.npy", cv)
-
-        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('Binary_categories', fontsize=20)
-        ax1.set_xlabel('LDA_value_Dis', fontsize=20)
-        ax1.set_ylabel("frequency", fontsize=20)
-        ax1.hist(np.array(bind_map), bins=100)
-        ax1.hist(np.array(nobind_map), bins=100)
-        # ax1.scatter(np.array(test_map), np.ones(shape=(5000,)), marker='D')
-        # plt.savefig(self.output + '{0}_{1}.png'.format('LDA', self.data_name))
-        plt.show()
-
-    def Dihedral(self):
-        result_A_psi_bind = np.squeeze(np.load(self.csv_path + 'result_A_psi_bind.npy', allow_pickle=True))
-        result_B_psi_bind = np.squeeze(np.load(self.csv_path + 'result_B_psi_bind.npy', allow_pickle=True))
-        result_A_phi_bind = np.squeeze(np.load(self.csv_path + 'result_A_phi_bind.npy', allow_pickle=True))
-        result_B_phi_bind = np.squeeze(np.load(self.csv_path + 'result_B_phi_bind.npy', allow_pickle=True))
-
-        result_A_psi_nobind = np.squeeze(np.load(self.csv_path + 'result_A_psi_nobind.npy', allow_pickle=True))
-        result_B_psi_nobind = np.squeeze(np.load(self.csv_path + 'result_B_psi_nobind.npy', allow_pickle=True))
-        result_A_phi_nobind = np.squeeze(np.load(self.csv_path + 'result_A_phi_nobind.npy', allow_pickle=True))
-        result_B_phi_nobind = np.squeeze(np.load(self.csv_path + 'result_B_phi_nobind.npy', allow_pickle=True))
-        # 数据组织形式：A_Phi, A_Psi, B_Phi, B_Psi
-        bind = np.hstack((result_A_phi_bind, result_A_psi_bind, result_B_phi_bind, result_B_psi_bind))
-        nobind = np.hstack((result_A_phi_nobind, result_A_psi_nobind, result_B_phi_nobind, result_B_psi_nobind))
-
-        bind = bind[500:]
-        nobind = nobind[500:]
-
-        bind_mean = np.mean(bind, axis=0)  # (302,)
-        nobind_mean = np.mean(nobind, axis=0)  # (302,)
-
-        diff = bind - bind_mean
-
-        bind_cov = np.cov(bind - bind_mean, rowvar=False)
-        nobind_cov = np.cov(nobind - nobind_mean, rowvar=False)
-
-        Sw = np.mat(bind_cov + nobind_cov)  # 要求对应特征一一对应
-        w = Sw.I * np.mat(bind_mean - nobind_mean).T  # .I为求逆
-        np.save(self.csv_path + "w.npy", w)
-        bind_map = bind * w
-        nobind_map = nobind * w
-
-        # ax1.scatter(np.array(test_map), np.ones(shape=(5000,)), marker='D')
         weightIndice = np.argsort(np.abs(w), axis=None)  # 对权重从小到大排序,返回值为索引
-        n_weightIndice = weightIndice[0,-1:-(50 + 1):-1]  # 最大的n个特征值的下标, 30个
+        # eg. [2,4,7,9,6,3] -> [2,3,4,6,7,9] -> [0 5 1 4 2 3]
+        # print(weightIndice.shape) (1, 2136)
+        n_weightIndice = weightIndice[0, -1:-(340 + 1):-1]  # 最大的n个权重的索引
         n_weightIndice_indice = np.argsort(n_weightIndice)
+        # print(n_weightIndice_indice)
 
-        n_weightIndice_order = n_weightIndice[0,n_weightIndice_indice] # 前n个最大的权重索引，顺序为特征顺序
+        n_weightIndice_order = n_weightIndice[0, n_weightIndice_indice]  # 前n个最大的权重索引，顺序为特征顺序
 
-        new_w = np.squeeze(w[:,0][n_weightIndice_order])
+        new_w = np.squeeze(w[:, 0][n_weightIndice_order])
+        # print(new_w)
 
         new_bind = np.squeeze(bind[:, n_weightIndice_order])
         new_nobind = np.squeeze(nobind[:, n_weightIndice_order])
@@ -756,20 +841,16 @@ class Lacomplex:
         new_bind_map = new_bind * new_w.T
         new_nobind_map = new_nobind * new_w.T
 
-        np.save("./dihedral_new_w.npy", new_w.T)
-        np.save("./dihedral_n_weightIndice_order.npy", n_weightIndice_order)
-
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('Binary_categories', fontsize=20)
-        ax1.set_xlabel('scatter', fontsize=20)
-        ax1.set_ylabel("no meaning", fontsize=20)
-        ax1.scatter(np.array(new_bind_map), np.ones(shape=(4501,)), marker='x')
-        ax1.scatter(np.array(new_nobind_map), np.ones(shape=(4501,)), marker='+')
-
-        # print(w[:,0][n_weightIndice])
+        ax1.set_xlabel('LDA_value_Dis', fontsize=20)
+        ax1.set_ylabel("frequency", fontsize=20)
+        ax1.hist(np.array(new_bind_map), bins=100)
+        ax1.hist(np.array(new_nobind_map), bins=100)
+        # ax1.scatter(np.array(test_map), np.ones(shape=(5000,)), marker='D')
+        # plt.savefig(self.output + '{0}_{1}.png'.format('LDA', self.data_name))
         plt.show()
-        # plt.savefig(self.output + '{0}.png'.format('Dihedral'))
 
     def Dihedral_sc(self):
         # 数据组织形式：A_Phi, A_Psi, B_Phi, B_Psi
@@ -787,13 +868,16 @@ class Lacomplex:
         w = Sw.I * np.mat(bind_mean - nobind_mean).T  # .I为求逆
         # print(w.shape) (2136, 1)
         weightIndice = np.argsort(np.abs(w), axis=None)  # 对权重从小到大排序,返回值为索引
+        # eg. [2,4,7,9,6,3] -> [2,3,4,6,7,9] -> [0 5 1 4 2 3]
         # print(weightIndice.shape) (1, 2136)
-        n_weightIndice = weightIndice[0, -1:-(300 + 1):-1]  # 最大的n个特征值的下标
+        n_weightIndice = weightIndice[0, -1:-(200 + 1):-1]  # 最大的n个权重的索引
         n_weightIndice_indice = np.argsort(n_weightIndice)
+        print(n_weightIndice_indice)
 
         n_weightIndice_order = n_weightIndice[0, n_weightIndice_indice]  # 前n个最大的权重索引，顺序为特征顺序
 
         new_w = np.squeeze(w[:, 0][n_weightIndice_order])
+        # print(new_w)
 
         new_bind = np.squeeze(bind[:, n_weightIndice_order])
         new_nobind = np.squeeze(nobind[:, n_weightIndice_order])
@@ -810,11 +894,11 @@ class Lacomplex:
         ax1.hist(np.array(new_nobind_map), bins=100)
 
         plt.show()
-        # np.save(self.csv_path + "w_dih.npy", w)
-        # np.save("./dihedral_new_w.npy", new_w.T)
-        # np.save("./dihedral_n_weightIndice_order.npy", n_weightIndice_order)
+        np.save("./dis100dih200/" + "w_dih.npy", w)
+        np.save("./dis100dih200/dihedral_new_w.npy", new_w.T)
+        np.save("./dis100dih200/dihedral_n_weightIndice_order.npy", n_weightIndice_order)
 
-    def single_LDA_Dis(self, pdb_path, uni):
+    def single_LDA_Dis(self, pdb_path, uni, frame):
         a_atom_cor, b_atom_cor, a_atom_nam, b_atom_nam = self.readHeavyAtom(pdb_path)
         data_df = self.calContact(a_atom_cor, b_atom_cor, a_atom_nam=a_atom_nam, b_atom_nam=b_atom_nam, filename=uni,
                         save_dis=False)[1]
@@ -822,7 +906,6 @@ class Lacomplex:
         aa_contact.sort()
         contact_dif = np.zeros(shape=(1, len(aa_contact)))
 
-        # dataframe = pd.read_csv('./{0}.csv'.format(uni))
         new_col = []
         new_index = []
         # 去除原子序数
@@ -835,7 +918,6 @@ class Lacomplex:
         data_df.columns = new_col
         data_df.index = new_index
 
-        # print(data_df)
         # 构建含有CB的cp
         for l in range(len(aa_contact)):
             cp = aa_contact[l]
@@ -846,11 +928,10 @@ class Lacomplex:
             contact_dif[0][l] = data_df[a_atom][b_atom]
 
         # np.save("./NPY_dis/{0}.npy".format(frame), contact_dif)
+        # print(contact_dif/10)
         w = np.load('./w_dis.npy', allow_pickle=True)
-        print(contact_dif)
-        print(contact_dif.shape)
+        print(w.shape)
         value = (np.mat(contact_dif) * w).tolist()[0][0]
-        print(value)
         return value
 
     def single_LDA_dih(self, pdb_path, frame):
@@ -877,15 +958,15 @@ class Lacomplex:
         result = np.hstack((result_A_phi, result_A_psi, result_B_phi, result_B_psi))
 
         result = np.hstack((np.sin((result * np.pi) / 180), np.cos((result * np.pi) / 180)))
-        np.save("./NPY_dih/{0}.npy".format(frame), result)
-
+        # np.save("./NPY_dih/{0}.npy".format(frame), result)
 
         new_w = np.load('./dihedral_new_w.npy', allow_pickle=True)
-        n_weightIndice_order = np.load('./dihedral_n_weightIndice_order.npy', allow_pickle=True)
+        # print(new_w.shape)
+        n_weightIndice_order = np.load('./dihedral_200_weightIndice_order.npy', allow_pickle=True)
         new_sample = np.squeeze(result[:, n_weightIndice_order], axis=1)
-
+        print(new_sample)
         value = (np.mat(new_sample) * new_w).tolist()[0][0]
-        # print(value)
+
         return value
 
 
@@ -1316,7 +1397,7 @@ class Lacomplex:
         print(atom_cor.shape)
 
     def Pareto_surface(self, average=False):
-        path = "/Users/erik/Desktop/Pareto/reverse/6th/"
+        path = "/Users/erik/Desktop/Pareto/forward/1th/"
         dis = []
         dih = []
 
@@ -1807,6 +1888,7 @@ class Lacomplex:
         w_dis = np.load("./w_dis.npy", allow_pickle=True)
         w_dih = np.load("./w_dih.npy", allow_pickle=True)
         aa_contact = list(np.load("./aa_contact.npy", allow_pickle=True).item())
+        aa_contact.sort()
 
         for i in np.where(np.abs(w_dis)>20)[0]:
             print(aa_contact[i])
@@ -1817,15 +1899,19 @@ class Lacomplex:
         ax1.set_title('', fontsize=20)
         ax1.set_xlabel('feat_num', fontsize=20)
         ax1.set_ylabel('weights', fontsize=20)
-        ax1.scatter(range(len(w_dih)), w_dih, s=5)
+        ax1.hist(w_dih, bins=100)
         # plt.show()
     def output_ATOMS(self):
-        a_name, b_name = self.readHeavyAtom("./md1.pdb",monitor=False)[2:]
+        dir = "reverse"
+        # 要使用氨基酸序号没有重排的那个pdb
+        target_pdb = "reverse_recover"
+
+        a_name, b_name = self.readHeavyAtom("./{0}/{1}.pdb".format(dir, target_pdb),monitor=False)[2:]
         aa_contact = list(np.load("./aa_contact.npy", allow_pickle=True).item())
         aa_contact.sort()
-        with open("./ATOMS.dat", 'a') as file:
+        with open("./{0}/ATOMS.dat".format(dir), 'a') as file:
             for item in range(len(aa_contact)):
-                input = "dist{0}: DISTANCE ATOMS={1},{2} NOPBC\n"
+                input = "dist{0}: DISTANCE ATOMS={1},{2}\n"
                 for a in a_name:
                     contact = aa_contact[item][0].split('-')
                     record = a.split('-')
@@ -1840,195 +1926,358 @@ class Lacomplex:
         file.close()
 
     def output_TORSION(self):
-        with open("./torsion.dat", 'a') as file:
-            input_A_phi_sine = "phi_sine_A{0}: TORSION ATOMS=@phi-{1} SINE NOPBC\n"
-            input_A_psi_sine = "psi_sine_A{0}: TORSION ATOMS=@psi-{1} SINE NOPBC\n"
-            input_B_phi_sine = "phi_sine_B{0}: TORSION ATOMS=@phi-{1} SINE NOPBC\n"
-            input_B_psi_sine = "psi_sine_B{0}: TORSION ATOMS=@psi-{1} SINE NOPBC\n"
+        """with open("./whole_TORSION.dat", 'a') as file:
+            input_A_phi = "phi_A_{0}: TORSION ATOMS=@phi-{1}\n"
+            input_A_psi = "psi_A_{0}: TORSION ATOMS=@psi-{1}\n"
+            input_B_phi = "phi_B_{0}: TORSION ATOMS=@phi-{1}\n"
+            input_B_psi = "psi_B_{0}: TORSION ATOMS=@psi-{1}\n"
 
-            input_A_phi_cosine = "phi_cosine_A{0}: TORSION ATOMS=@phi-{1} COSINE NOPBC\n"
-            input_A_psi_cosine = "psi_cosine_A{0}: TORSION ATOMS=@psi-{1} COSINE NOPBC\n"
-            input_B_phi_cosine = "phi_cosine_B{0}: TORSION ATOMS=@phi-{1} COSINE NOPBC\n"
-            input_B_psi_cosine = "psi_cosine_B{0}: TORSION ATOMS=@psi-{1} COSINE NOPBC\n"
             for i in range(1, 268):
-                file.write(input_A_phi_sine.format(i, i + 1))
-                file.write(input_A_psi_sine.format(i + 268, i + 1))
-                file.write(input_B_phi_sine.format(i + 268*2, i + 269))
-                file.write(input_B_psi_sine.format(i + 268*3, i + 269))
-                file.write(input_A_phi_cosine.format(i + 268 * 4, i + 1))
-                file.write(input_A_psi_cosine.format(i + 268 * 5, i + 1))
-                file.write(input_B_phi_cosine.format(i + 268 * 6, i + 269))
-                file.write(input_B_psi_cosine.format(i + 268 * 7, i + 269))
+                file.write(input_A_phi.format(i, i + 1))
+            for i in range(1, 268):
+                file.write(input_A_psi.format(i, i))
+            for i in range(1, 268):
+                file.write(input_B_phi.format(i, i + 269))
+            for i in range(1, 268):
+                file.write(input_B_psi.format(i, i + 268))
 
+        file.close()"""
+
+        dir = "reverse"
+        choosed_torsion = set()
+
+        with open("./{0}/MATHEVAL.dat".format(dir), 'r') as file:
+            for i in file.readlines():
+                record = i.strip().split()
+                # print(record)
+                # record[2] : ARG=psi_B_113
+                torsion = record[2].split('=')[-1]
+                choosed_torsion.add(torsion)
         file.close()
 
+        TORSION = defaultdict(str)
+        with open("./whole_TORSION.dat", 'r') as f:
+            for j in f.readlines():
+                record = j.strip().split(":")
+                TORSION[record[0]] = record[1]
+        f.close()
 
-    """def plotNNout(self):
+        with open("./{0}/TORSION.dat".format(dir), 'a') as ff:
+            for k in choosed_torsion:
+                ff.write(k+":")
+                ff.write(TORSION[k])
+                ff.write('\n')
+        ff.close()
+    def output_MATHEVAL(self):
+        dir = "reverse"
+
+        indice = np.load("./{0}/dihedral_200_weightIndice_order.npy".format(dir), allow_pickle=True)
+        with open("./whole_ARG.dat", 'r') as f:
+            for i in f.readlines():
+                torsion = i.strip().split(",")
+        f.close()
+        torsion = torsion[340:]
+        # print(torsion)
+        choosed_torsion = []
+        for k in np.squeeze(indice):
+            choosed_torsion.append(torsion[k])
+
+        # print(choosed_torsion)
+
+        with open("./{0}/MATHEVAL.dat".format(dir), 'a') as file1:
+            for j in choosed_torsion:
+                record = j.split("_")
+                file1.write("{0}: MATHEVAL ARG={1} FUNC={2}(x) PERIODIC=NO\n".format(j, record[1]+'_'+record[2]+'_'+record[3], record[0]))
+        file1.close()
+
+    def output_parameters(self, model_CKPT):
+        keys = model_CKPT['state_dict'].keys()
+        for key in keys:
+            items = model_CKPT['state_dict'][key]
+            if len(items.size()) == 2:
+                name = "{0}_{1}_WEIGHTS.dat".format(items.size()[0], items.size()[1])
+                with open(name, 'a') as file_w:
+                    for i in range(items.size()[0]):
+                        for j in range(items.size()[1]):
+                            file_w.write(',')
+                            file_w.write(str(items[i][j].tolist()))
+                file_w.close()
+            elif len(items.size()) == 1:
+                name = "{0}_BIAS.dat".format(items.size()[0])
+                with open(name, 'a') as file:
+                    for i in range(items.size()[0]):
+                        file.write(',')
+                        file.write(str(items[i].tolist()))
+                file.close()
+
+    def output_ARG(self):
+        dir = "reverse"
+        ARG = []
+        with open("./{0}/ATOMS.dat".format(dir), 'r') as file1:
+            for i in file1.readlines():
+                record = i.split(":")
+                ARG.append(record[0])
+        file1.close()
+        with open("./{0}/MATHEVAL.dat".format(dir), 'r') as file2:
+            for i in file2.readlines():
+                record = i.split(":")
+                ARG.append(record[0])
+        file2.close()
+        with open("./{0}/ARG.dat".format(dir), 'a') as file3:
+            for j in ARG:
+                file3.write(',')
+                file3.write(j)
+        file3.close()
+
+        """with open("./whole_ARG.dat", 'a') as file3:
+            file3.write("dist1")
+            for i in range(2, 341):
+                file3.write(",")
+                file3.write("dist{0}".format(i))
+
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("sin_phi_A_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("sin_psi_A_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("sin_phi_B_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("sin_psi_B_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("cos_phi_A_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("cos_psi_A_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("cos_phi_B_{0}".format(j))
+            for j in range(1, 268):
+                file3.write(",")
+                file3.write("cos_psi_B_{0}".format(j))
+        file3.close()"""
+
+    def show_log(self):
+        LDA_for = []
+        for i in range(5):
+            with open("./log{0}".format(i+1), 'r') as file:
+                for j in file.readlines():
+                    record = j.split()
+                    if record[0] == "value":
+                        LDA_for.append(float(record[-1]))
+
+        LDA_rev = []
+        for i in range(4,0,-1):
+            with open("./log_rev{0}".format(i), 'r') as file:
+                for j in file.readlines():
+                    record = j.split()
+                    if record[0] == "value":
+                        LDA_rev.append(float(record[-1]))
+
+        # LDA = LDA_for + LDA_rev
+
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        x_rev = []
+        for k in range(1,len(LDA_rev)+1):
+            x_rev.append(k+len(LDA_for))
+
         ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('probability', fontsize=20)
-        # ax1.set_xlabel('0', fontsize=20)
-        ax1.set_ylabel('probability', fontsize=20)
-        ax1.set_ylabel('frame', fontsize=20)
-
-        for i in range(1,8):
-            path = './models/{0}'.format(i)
-            model = tf.saved_model.load(path)
-            # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
-            data_x = np.load('./iptg_nobind.npy', allow_pickle=True)[500:]
-            # print(data_x.shape)
-            data_x = self.norm(data_x)
-            data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
-            out = model(data_x)
-            print(out)
-            ax1.plot(range(4500), out[:,1])
-
-        # ax1.plot([0, 1], [0, 1], color='black')
+        ax1.set_title('', fontsize=20)
+        ax1.set_xlabel('COLVAR', fontsize=20)
+        ax1.set_ylabel('free', fontsize=20)
+        ax1.scatter(range(len(LDA_for)), LDA_for, s=1)
+        ax1.scatter(x_rev, LDA_rev, s=1)
         plt.show()
 
-    def protran(self):
-        result=[]
-        for i in range(1,21):
-            path = './models/{0}'.format(i)
-            model = tf.saved_model.load(path)
-            data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
-            data_x = self.norm(data_x)
-            data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
-            out = model(data_x)
-            mean_model = tf.reduce_mean(out[:,0])
-            result.append(mean_model)
-            print(mean_model)
-        print(result)
-        print("total_mean:", np.mean(result))
+    def plot_FES(self):
+        dir = "/reverse/"
+        COLVAR = []
+        free = []
+        der = []
+
+        with open(".{0}fes.dat".format(dir), 'r') as file:
+            for i in file.readlines():
+                record = i.strip()
+                if record[0] != "#":
+                    record = record.split()
+                    COLVAR.append(float(record[0]))
+                    free.append(float(record[1]))
+                    der.append(float(record[2]))
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('process', fontsize=20)
-        ax1.set_xlabel('frame', fontsize=20)
-        ax1.set_ylabel('probability to Nobind', fontsize=20)
-        ax1.plot(range(5000),out[:,0])
-
+        ax1.set_title('', fontsize=20)
+        ax1.set_xlabel('COLVAR', fontsize=20)
+        ax1.set_ylabel('free', fontsize=20)
+        ax1.scatter(COLVAR, free, s=.1)
+        # plt.savefig('free_energy.png')
         plt.show()
 
-    def train(self,
-              # i
-              ):
-        for i in range(7, 8):  # 批量训练神经网络
-            path = self.ANN + "twostates_train.npy"  # 读取训练数据
-            train_x = np.load(path, allow_pickle=True)  # 前4500是Bind，后4500是Nobind
-            test_x = np.load('./iptg_nobind.npy', allow_pickle=True)  # 读取测试数据，5000
+    def plot_convergence(self):
+        start = 1
+        end = 10
+        for i in range(start, end+1):
+            COLVAR = []
+            free = []
+            der = []
 
-            train_y = np.zeros(shape=(train_x.shape[0]))  # 设定标签，9000
-            train_y[:4500] = 1
-            test_y = np.zeros(shape=(test_x.shape[0]))  # 5000
+            with open("./fes_{0}.dat".format(i), 'r') as file:
+                for j in file.readlines():
+                    record = j.strip()
+                    if record[0] != "#":
+                        record = record.split()
+                        COLVAR.append(float(record[0]))
+                        free.append(float(record[1]))
+                        der.append(float(record[2]))
 
-            # print(train_x.shape, test_x.shape)
-            dataset_x = np.concatenate((train_x, test_x), axis=0)  # 合并训练集和测试集，14000
-            # print(dataset_x.shape)
+            fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+            ax1 = fig.add_subplot(1, 1, 1)
+            plt.xlim((-1.2, 1.2))
+            ax1.set_title('', fontsize=20)
+            ax1.set_xlabel('ann.out', fontsize=20)
+            ax1.set_ylabel('free', fontsize=20)
+            ax1.plot(COLVAR, free, label=str(i))  # 12种颜色
+        plt.legend()
+        plt.savefig('free_energy_convergence.png')
+        # plt.show()
 
-            dataset_x = self.norm(dataset_x)
-            dataset_y = np.concatenate((train_y, test_y))  # 合并标签，14000
+    def metadynamics_pathway(self):
+        dis = []
+        dih = []
+        interval = 250  # 每50ns更换颜色
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
 
-            # train
-            dataset_x = tf.convert_to_tensor(dataset_x, dtype=tf.float32)
-            dataset_y = tf.convert_to_tensor(dataset_y, dtype=tf.int32)
-            dataset_y_onehot = tf.one_hot(dataset_y, depth=2, dtype=tf.int32)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('', fontsize=20)
+        ax1.set_xlabel('dis', fontsize=20)
+        ax1.set_ylabel("dih", fontsize=20)
 
-            model = tf.keras.Sequential([  # 加个tf.就可以正常保存了！！！另外说一句，keras比tf慢了不止一点
-                layers.Dense(256, activation=tf.nn.tanh),
-                layers.Dense(128, activation=tf.nn.tanh),
-                layers.Dense(64, activation=tf.nn.tanh),
-                layers.Dense(32, activation=tf.nn.tanh),
-                layers.Dense(16, activation=tf.nn.tanh),
-                layers.Dense(8, activation=tf.nn.tanh),
-                layers.Dense(4, activation=tf.nn.tanh),
-                layers.Dense(2, activation=tf.nn.softmax)
-            ])
+        path = "./"
+        # rms = self.read_rmsd_gmx(path + "rmsd.xvg")
+        for n in range(1, 51):
+            dis_value = np.load(path + "dis_{0}.npy".format(n), allow_pickle=True)
+            # print(dis_value)
+            dih_value = np.load(path + "dih_{0}.npy".format(n), allow_pickle=True)
 
-            callbacks = MyCallback()
-            model.compile(optimizer=optimizers.Adam(learning_rate=0.00001),
-                          loss=tf.losses.binary_crossentropy,
-                          metrics=[
-                              Myacc()
-                          ])
-            models_path = './models/'  # saver保存路径
-            logs_dir = './logs/{0}/'.format(i)
-            logs_train_dir = os.path.join(logs_dir, "train")
-            logs_valid_dir = os.path.join(logs_dir, "valid")
+            dis += dis_value.tolist()
+            dih += dih_value.tolist()
 
-            for dir_name in [logs_dir, logs_train_dir, logs_valid_dir, models_path]:
-                if not os.path.exists(dir_name):
-                    os.mkdir(dir_name)
-            summary_writer = tf.summary.create_file_writer(logs_train_dir)
+        """for k in range(int(len(dis) / interval)):
+            ax1.scatter(dis[interval * k:interval * (k + 1)], dih[interval * k:interval * (k + 1)], s=.5)"""
+        ax1.scatter(dih, range(len(dih)), s=.5)
+        plt.savefig("./dih_trend.png")
+        # plt.show()
+        # self.pick_frame(np.array(dis), np.array(dih))
 
-            model.fit(
-                dataset_x,
-                dataset_y_onehot,
-                epochs=10000,
-                shuffle=True,
-                batch_size=100,
-                validation_split=5 / 14,
-                # validation_data=(dataset_x[9000:], dataset_y[9000:]),
-                callbacks=[callbacks]
-            )
+    def back_to_train_set(self):
+        dir = "dis100dih200"
+        bind = np.load("./bind.npy", allow_pickle=True)
+        nobind = np.load("./nobind.npy", allow_pickle=True)
 
-            tf.saved_model.save(model, models_path+'{0}'.format(i))
+        indice_sc = np.load("./{0}/dihedral_n_weightIndice_order.npy".format(dir), allow_pickle=True)
+        new_w_dih = np.load("./{0}/dihedral_new_w.npy".format(dir), allow_pickle=True)
+        w_dis = np.load("./{0}/w_dis.npy".format(dir), allow_pickle=True)
+        # print(new_w_dis.shape)
+        # print(new_w_dih.shape)
+        modi_bind = np.hstack((bind[:, :340], bind[:, np.squeeze(340 + indice_sc)]))
+        modi_nobind = np.hstack((nobind[:, :340], nobind[:, np.squeeze(340 + indice_sc)]))
+        bind_sc = modi_bind[:,340:].dot(new_w_dih)
+        nobind_sc = modi_nobind[:, 340:].dot(new_w_dih)
 
+        bind_dis = modi_bind[:, :340].dot(w_dis)
+        nobind_dis = modi_nobind[:, :340].dot(w_dis)
 
-    def testmodels(self):
-        model1 = tf.saved_model.load("./modelsset2/18")
-        # model2 = tf.saved_model.load("./models/2")
-        # data_x = np.load('./iptg_nobind.npy', allow_pickle=True)
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
 
-        data_x = np.load('./Bind.npy', allow_pickle=True)[500:]
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('', fontsize=20)
+        ax1.set_xlabel('dis', fontsize=20)
+        ax1.set_ylabel("dih", fontsize=20)
+        ax1.scatter(np.vstack((bind_dis,nobind_dis)), np.vstack((bind_sc, nobind_sc)) ,s=.1)
+        plt.show()
 
-        data_x = self.norm(data_x)
-        data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
+    def recover_pdb(self, pdb_path, serial):
+        path = pdb_path.format(serial)
+        recover_pdb = []
+        start = 61
+        current_chain = 'A'
+        with open(path, 'r') as file:
+            for i in file.readlines():
+                record = i.strip()
+                if record[:4] == 'ATOM':
+                    name = record[12:16].strip()
+                    chain_ID = record[21]
+                    # resSeq = record[22:26]
+                    # print(chain_ID, resSeq)
+                    # print(record)
+                    if chain_ID == current_chain:
+                        if name == 'N':
+                            start += 1
+                    else:
+                        current_chain  =chain_ID
+                        start = 61
+                        if name == 'N':
+                            start += 1
+                    record = record[:22] + "{:>4s}".format(str(start)) + record[26:] + '\n'
+                    recover_pdb.append(record)
+        file.close()
 
-        # label = np.zeros(shape=(data_x.shape[0]))
-        # label = tf.convert_to_tensor(label, dtype=tf.int32)  # 必须是int64用于计算accuracy
-        out1 = model1(data_x)
-        # print(out)
-        # out2 = model2(data_x)
-        pro1 = out1[:,1]
-        # pro2 = out2[:, 0]
-        # print(pro1[3754])
-        # print(pro2[3754])
-        print(pro1)
-        print(np.where(pro1==np.min(pro1)))"""
+        write_pdb = pdb_path.format(str(serial)+"_recover")
+        # print(write_pdb)
+
+        with open(write_pdb, 'a') as f:
+            for k in recover_pdb:
+                f.write(k)
+        f.close()
+
+    def test_NPY(self):
+        path = "/Users/erik/Desktop/Pareto/reverse/5th/"
+        data = []
+        for i in range(10000):
+            dis = np.squeeze(np.load(path + "NPY_dis/" + "{0}.npy".format(i), allow_pickle=True))
+            dih = np.squeeze(np.load(path + "NPY_dih/" + "{0}.npy".format(i), allow_pickle=True))
+            data.append(np.hstack((dis,dih)).tolist())
+
+        data = np.array(data)
+        np.save("/Users/erik/PycharmProjects/myNN/my/test_dataset/reverse_test.npy", data)
+        print(data.shape)
+
+    def check_COLVAR(self):
+        path = "/Users/erik/PycharmProjects/Lacomplex/forward/COLVAR"
+        with open(path, 'r') as file:
+            for i in file.readlines():
+                record = i.strip().split()
+                print(record)
+
+    def cal_COM(self, cors:np.array, mass:list):
+        assert len(cors) == len(mass)
+        M = np.sum(mass)
+        add_mass = []
+        for i in range(len(mass)):
+            add_mass.append(cors[i]*mass[i])
+
+        add_mass = np.sum(np.array(add_mass), axis=0)
+        print(add_mass/M)
+
 
 
 # print(sys.argv[1])
 
 lc = Lacomplex()
-# lc.rmsd_batch()
 # lc.sasa_cluster()
-# lc.batchFrame2Dih()
-
-# lc.Dihedral()
-# lc.Dihedral_sc()
-
 
 # lc.sasa_sf('/Users/erik/PycharmProjects/Lacomplex/SASA/sasa_md4000.pdb')
-# print("$$$")
 # score = lc.sasa_sf('/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/3/after_gather/repre_310.0K/rep6_sasa')
-# print(score)
-# lc.check_diff('./extract_cor.txt', './md26.pdb') # 注意，若是反向的话需要使用另一边的初始结构来读取原子名称
-# 0号帧
-# a_atom_cor, b_atom_cor, a_atom_nam, b_atom_nam = lc.readHeavyAtom(lc.frame_path+lc.frame_name.format(0))
-# lc.calContact(a_atom_cor, b_atom_cor,a_atom_nam=a_atom_nam,b_atom_nam=b_atom_nam,filename=0,save_dis=True)
 
-# lc.batchFrame2Dis()
-# lc.mergeSet()
-# lc.aa_contact()
-# lc.ConDifPerFra(save=True)
-# lc.ConDifPerFra_CB()
 # lc.avedis()
 # lc.statistics()
 # lc.covariance()
 # lc.PCA_dis()
 # lc.PCA_dih()
-# lc.Distance()
 
 # lc.numperaa()
 # lc.aveDistribution()
@@ -2037,19 +2286,12 @@ lc = Lacomplex()
 
 # lc.merge_dis()
 # lc.merge_dih()
-# lc.train()
-# lc.testmodels()
-# lc.plotNNout()
-# lc.protran()
-# lc.single_LDA_Dis("/Users/erik/PycharmProjects/Lacomplex/md3250.pdb", "extract_cor")
-# lc.single_LDA_dih("/Users/erik/PycharmProjects/Lacomplex/work1/md2000.pdb")
+# lc.single_LDA_Dis("/Users/erik/PycharmProjects/Lacomplex/forward/md50000_pbc_recover.pdb", "extract_cor", 50000)
+# lc.single_LDA_dih("/Users/erik/PycharmProjects/Lacomplex/forward/md50000_pbc_recover.pdb", 50000)
 # lc.LDA_trend()
 
-# lc.add_chainID("./start.pdb")
+# lc.add_chainID("./forward.pdb")
 # lc.relative_sasa_statistics("MET")
-# a,b = lc.gather_dihedral_atom("./md1000.pdb", type="Psi")
-# print(a[184])
-# print(len(a))
 # lc.read_extract_cor()
 
 # lc.Pareto_surface(average=True)
@@ -2058,7 +2300,6 @@ lc = Lacomplex()
 # lc.rmsf_plot_amber()
 # lc.REMD_temperature_generation(310, 400, 8)
 # lc.sasa_statistics()
-# lc.Distance()
 # lc.frame_path = "/home/caofan/work3/NoIptg_NoBind/frame_pbc"
 # lc.batchFrame2Dih()
 # lc.sasa()
@@ -2078,4 +2319,34 @@ lc = Lacomplex()
 # lc.dih_diff_feat()
 # lc.show_weigths()
 # lc.output_ATOMS()
-lc.output_TORSION()
+# lc.output_TORSION()
+# lc.output_MATHEVAL()
+# lc.output_ARG()
+# lc.show_log()
+# lc.Dihedral_sc()
+# lc.Distance()
+# lc.plot_FES()
+# lc.plot_convergence()
+# lc.metadynamics_pathway()
+# lc.Distance()
+# lc.Dihedral_sc()
+# lc.back_to_train_set()
+# for i in range(50001):
+#     lc.recover_pdb("/home/caofan/enhanced_sampling/10_10_rev/frame_pbc/md{0}.pdb", i)
+
+# lc.test_NPY()
+# lc.recover_pdb("/Users/erik/PycharmProjects/Lacomplex/reverse/{0}.pdb", "reverse")
+# lc.check_COLVAR()
+cors = [[89.132,  83.932,  25.273],
+        [88.872,  82.635,  25.957],
+        [87.307,  82.375,  25.946],
+        [86.543,  83.320,  26.804],
+        [85.078,  83.037,  26.698],
+        [84.554,  83.023,  25.562],
+        [84.392,  82.780,  27.718],
+        [89.497,  81.386,  25.278],
+        [89.716,  80.408,  25.974]]
+
+mass = [14,12,12,12,12,16,16,12,16]
+
+lc.cal_COM(np.array(cors)/10., mass)

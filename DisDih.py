@@ -8,15 +8,15 @@ import matplotlib.pyplot as plt
 lc = Lacomplex()
 pdb_path = "./frame_pbc"
 
-batch_size = 10  # 任务数
-frames = 10000  # +1
+batch_size = 40  # 任务数
+frames = 40000  # +1
 def mpi_cal(serial):
     dis_npy = []
     dih_npy = []
     lc = Lacomplex()
     for p in range(int((frames/batch_size)*(serial-1)), int((frames/batch_size)*serial)):
-        dis_value = lc.single_LDA_Dis(pdb_path+"/md{0}.pdb".format(p), "extract_{0}".format(serial), p)
-        dih_value = lc.single_LDA_dih(pdb_path+"/md{0}.pdb".format(p), p)
+        dis_value = lc.single_LDA_Dis(pdb_path+"/md{0}_recover.pdb".format(p), "extract_{0}".format(serial), p)
+        dih_value = lc.single_LDA_dih(pdb_path+"/md{0}_recover.pdb".format(p), p)
         dis_npy.append(dis_value)
         dih_npy.append(dih_value)
 
