@@ -1,25 +1,26 @@
+# 寄！
 # 归一化最好使用方差归一化
-# 续点不需要重新平衡
-# 目前还只是探索，后续要自动执行，放入超算里
 # 小红师姐的课题，要跑长一点，然后观察起伏，如果只是波动就没必要求平均，直接拿出来看就好了
-# 隐式溶剂模型使用amber
 # 用二面角来对这两种构象进行表征，看是否正交；
-# PCA验证变量间的独立性，
-# 试着使用NN来区分第二维，看是否有能力区分能力
 # 两种状态的原子顺序有细微的差异
 # 小红师姐的课题，要先统计SASA的分布？然后再跑REMD，看均值和方差
 # fit会因为算法原因让一段结构倾向于稳定在原地，这就会导致也许其余结构变化并不大，但是fit之后导致较高的rmsf
 # 检查一下方差计算是否有误
 # 将relative_SASA分为三个部分，小于0.36，大于0.6，介于两者之间，氨基酸的个数
-# 对于副本交换的数据，追踪一段轨迹内遍历的温度是否均匀；还可以把同一个温度下的轨迹收集起来做聚类，与实验结果比较
 # 对于我的课题，可以去看一下两个局部极小的dih局部特征改变的都有哪些，把dih的分布画出来
+
+# 对于副本交换的数据，追踪一段轨迹内遍历的温度是否均匀；还可以把同一个温度下的轨迹收集起来做聚类，与实验结果比较
 # 把REMD的轨迹求平均，大概就算跨了温度也无所谓
 # 温度副本交换MD一般来说低温度的要密集一些，高温的要稀疏一些
 # 对于一个副本经历的温度，看一下它的结构覆盖是否齐全，若是齐全的话就没必要那么高的温度，检查其收敛性，有没有一直保持在一个温度
 # 还可以检查一下回旋半径和二级结构的数量，监测其松散程度
-# 检查一下计算的效率，可能不需要那么多的核数
 # 质心的约束
 # 小红师姐的课题，对于为什么出现模拟崩溃的现象，有一种可能的原因是恒温器的问题，再进一步解释是质心运动，但是我现在还没搞懂速度缩放和温度控制之间的关系
+# rmsd约束每一个亚结构域，升高温度，再投影到三维？
+
+# 被质疑的点可能是水模型，因为水模型都是在常温下定义的
+# 可以常温高温都试一下，然后看看高温下的unfolding状态是否可以被捕获
+# 恒容高温
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -349,7 +350,7 @@ class Lacomplex:
                 atom = record[:4].strip()
                 if atom != "ATOM":  # 检测ATOM起始行
                     continue
-
+                print(record)
                 serial = record[6:11].strip()  # 697
                 atname = record[12:16].strip()  # CA
                 resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
@@ -980,8 +981,8 @@ class Lacomplex:
         plt.show()
 
     def rmsd_plot_gmx(self):  # 单位为Å
-        path = "/Users/erik/Desktop/Pareto/reverse/5th/"
-        filename = "rmsd_weight.xvg"
+        path = "/Users/erik/Desktop/RAF/cry_repacking/test/3/"
+        filename = "rmsd.xvg"
         frame = 0
         rms = []
         with open(path+filename) as f:
@@ -999,9 +1000,34 @@ class Lacomplex:
         ax1.set_title('Figure', fontsize=20)
         ax1.set_xlabel('frame', fontsize=20)
         ax1.set_ylabel("RMSD(Å)", fontsize=20)
-        ax1.scatter(range(frame), rms, s=.3)
+        ax1.scatter(range(frame), rms, s=.8)
         plt.show()
-        np.save(path+"rmsd.npy", np.array(rms))
+        # np.save(path+"rmsd.npy", np.array(rms))
+
+    def gyrate_plot_gmx(self):  # 单位为Å
+        path = "/Users/erik/Desktop/RAF/crystal_WT/384K/1/"
+        filename = "gyrate.xvg"
+        frame = 0
+        gyrate = []
+        with open(path+filename) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    gyrate.append(float(li[1])*10)  # Å
+                    frame += 1
+
+        print(np.mean(gyrate))
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('frame', fontsize=20)
+        ax1.set_ylabel("gyrate(Å)", fontsize=20)
+        ax1.scatter(range(frame), gyrate, s=.8)
+
+        plt.show()
 
     def rmsd_plot_vmd(self):  # 单位为Å
         path = "/Users/erik/Desktop/Pareto/reverse/4th/rmsd.xvg"
@@ -1026,7 +1052,7 @@ class Lacomplex:
 
     def rmsf_plot(self):  # 单位为Å
         file_name = 'rmsf_res'
-        target_file = self.vmd_rmsd_path + file_name + ".xvg"
+        target_file = "/Users/erik/Desktop/RAF/crystal_WT/test/2/" + file_name + ".xvg"
         x = [[], []]
         y = [[], []]
         chain_id = -1
@@ -1040,7 +1066,7 @@ class Lacomplex:
                     res_id = float(li[0])
                     if res_id == 1:
                         chain_id += 1
-                    x[chain_id].append(res_id)
+                    x[chain_id].append(int(res_id))  # -55
                     y[chain_id].append(float(li[1])*10)
 
         # np.save(self.vmd_rmsd_path + file_name + ".npy", np.array(y))
@@ -1050,17 +1076,22 @@ class Lacomplex:
         ax1.set_xlabel('residue', fontsize=20)
         ax1.set_ylabel("RMSF(Å)", fontsize=20)
         ax1.plot(x[0], y[0])  # 4.1G
+        ax1.scatter(x[0], y[0], s=20, color="green")  # 4.1G
+
         ax1.plot(x[1], y[1])  # NuMA
+        print(x[0], x[1])
+        print(y[0], y[1])
+
 
         # hydrophobic_index
-        ax1.scatter(self.hydrophobic_index[0], [y[0][i - 1] for i in self.hydrophobic_index[0]], color="black")
-        ax1.scatter(self.hydrophobic_index[1], [y[1][i - 1] for i in self.hydrophobic_index[1]], color="black")
+        # ax1.scatter(self.hydrophobic_index[0], [y[0][i - 1] for i in self.hydrophobic_index[0]], color="black")
+        # ax1.scatter(self.hydrophobic_index[1], [y[1][i - 1] for i in self.hydrophobic_index[1]], color="black")
 
         # hydrophilic_index
-        ax1.scatter(self.hydrophilic_index[0], y[0][self.hydrophilic_index[0] - 1], color="red")
+        # ax1.scatter(self.hydrophilic_index[0], y[0][self.hydrophilic_index[0] - 1], color="red")
 
         # either
-        ax1.scatter(self.either_index, [y[0][i - 1] for i in self.either_index], color="green")
+        # ax1.scatter(self.either_index, [y[0][i - 1] for i in self.either_index], color="green")
 
         plt.show()
 
@@ -1379,7 +1410,7 @@ class Lacomplex:
 
                 resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
                 resSeq = int(record[22:26].strip())
-                if resSeq == 62 and current_aa != resName:     # 1或62，取决于是我的体系还是小红师姐的体系
+                if resSeq == 1 and current_aa != resName:     # 1或62，取决于是我的体系还是小红师姐的体系
                     n += 1
                 record = record[:21] + chain_ID[n] + record[22:]
                 current_aa = resName
@@ -1635,6 +1666,29 @@ class Lacomplex:
 
         plt.show()
 
+    def rmsd_plot_amber(self):
+        path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/"
+        filename = "310K.data"
+        frame = 0
+        rms = []
+        with open(path + filename) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    rms.append(float(li[1]))  # Å already Å
+                    frame += 1
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('frame', fontsize=20)
+        ax1.set_ylabel("RMSD(Å)", fontsize=20)
+        ax1.scatter(range(frame), rms, s=.1)
+        plt.show()
+
     def REMD_temperature_generation(self, start, end, replicas):
         if os.path.exists("./temperatures.dat"):
             os.system("rm temperatures.dat")
@@ -1744,16 +1798,16 @@ class Lacomplex:
 
     def crdidx(self):  # 一个温度经历的所有通道
         start = 1
-        end = 3
+        end = 1
 
-        num = 10
-        exchanges = 10000 * (end - start + 1)
+        num = 8  # num of temperatures
+        exchanges = 100000 * (end - start + 1)
         series = dict()
         for p in range(1, num + 1):
             series[str(p)] = []
 
         for serial in range(start, end + 1):
-            path = "/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/{0}/crdidx.dat".format(serial)
+            path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/crdidx.dat".format(serial)
             with open(path, 'r') as f:
                 for i in f.readlines():
                     record = i.strip().split()
@@ -1763,7 +1817,7 @@ class Lacomplex:
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         for k in range(1, num + 1):
-            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1 = fig.add_subplot(3, 3, k)  # 左上角第一个开始填充，从左到右
             ax1.set_title('time series of replica exchange', fontsize=2)
             ax1.set_xlabel('time(ps)', fontsize=2)
             ax1.set_ylabel("Replica", fontsize=2)
@@ -1773,17 +1827,17 @@ class Lacomplex:
 
     def repidx(self):  # 一个通道经历的所有温度
         start = 1
-        end = 3
+        end = 1
 
-        num = 10
-        exchanges = 10000 * (end - start + 1)
+        num = 8
+        exchanges = 100000 * (end - start + 1)
 
         series = dict()
         for p in range(1, num + 1):
             series[str(p)] = []
 
         for serial in range(start, end + 1):
-            path = "/Users/erik/PycharmProjects/Lacomplex/MD_WWN/4th/{0}/repidx.dat".format(serial)
+            path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/repidx.dat".format(serial)
             with open(path, 'r') as f:
                 for i in f.readlines():
                     record = i.strip().split()
@@ -1793,7 +1847,7 @@ class Lacomplex:
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         for k in range(1, num + 1):
-            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1 = fig.add_subplot(3, 3, k)  # 左上角第一个开始填充，从左到右
             ax1.set_title('time series of replica exchange', fontsize=2)
             ax1.set_xlabel('time(ps)', fontsize=2)
             ax1.set_ylabel("Replica", fontsize=2)
@@ -2153,10 +2207,10 @@ class Lacomplex:
 
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('', fontsize=20)
-        ax1.set_xlabel('dis', fontsize=20)
-        ax1.set_ylabel("dih", fontsize=20)
+        ax1.set_xlabel('frames', fontsize=20)
+        ax1.set_ylabel("dis", fontsize=20)
 
-        path = "./"
+        path = "/Users/erik/PycharmProjects/Lacomplex/reverse/"
         # rms = self.read_rmsd_gmx(path + "rmsd.xvg")
         for n in range(1, 51):
             dis_value = np.load(path + "dis_{0}.npy".format(n), allow_pickle=True)
@@ -2168,9 +2222,9 @@ class Lacomplex:
 
         """for k in range(int(len(dis) / interval)):
             ax1.scatter(dis[interval * k:interval * (k + 1)], dih[interval * k:interval * (k + 1)], s=.5)"""
-        ax1.scatter(dih, range(len(dih)), s=.5)
-        plt.savefig("./dih_trend.png")
-        # plt.show()
+        ax1.scatter(range(len(dis)), dis, s=.5)
+        # plt.savefig("./dih_trend.png")
+        plt.show()
         # self.pick_frame(np.array(dis), np.array(dih))
 
     def back_to_train_set(self):
@@ -2263,7 +2317,99 @@ class Lacomplex:
         add_mass = np.sum(np.array(add_mass), axis=0)
         print(add_mass/M)
 
+    def output_COM_restraint(self):
+        atoms = ["N", "CA", "C"]
+        len_chain_A = 57
+        len_total = 74
+        # for i in range(len_chain_A+1, len_total+1):
+        #     print(i,",", i,",", i,",",end="", sep="")
+        for i in range(1, (len_total-len_chain_A)*3+1):
+            print("grnam2({0})='{1}'".format(i, atoms[(i-1)%3]),",", sep="", end="")
 
+    def Kdist_plot(self):
+        start = 1
+        end = 6
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)  # 左上角第一个开始填充，从左到右
+        for k in range(start, end + 1):
+            path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/"
+
+            filename = "Kdist.{0}.dat"
+            distance = []
+            with open(path + filename.format(k)) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        distance.append(float(li[1]))  # Å already Å
+
+            ax1.set_title('dbscan kdist', fontsize=2)
+            ax1.set_xlabel('frames', fontsize=2)
+            ax1.set_ylabel("Distance", fontsize=2)
+
+            ax1.plot(range(len(distance)), distance, label=str(k))
+
+        plt.legend()
+        plt.show()
+
+    def cnumvtime(self):
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)  # 左上角第一个开始填充，从左到右
+        path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/repre_310.0K/cnumvtime.dat"
+        cnum = []
+        with open(path) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    cnum.append(float(li[1]))
+        plt.ylim((-5, 20))
+        ax1.set_title('cluster', fontsize=2)
+        ax1.set_xlabel('frames', fontsize=2)
+        ax1.set_ylabel("cnum", fontsize=2)
+        ax1.scatter(range(len(cnum)), cnum, s=.1)
+        plt.show()
+
+    def find_lowest_ESeq(self):
+        path = "/Users/erik/Desktop/RAF/designlog"
+        E = []
+        with open(path, 'r') as file:
+            for i in file.readlines():
+                record = i.strip().split()
+                E.append(float(record[-2]))
+
+        E = np.array(E)
+        print(np.argsort(E))
+        print(E[49])
+        print(E[23])
+
+    def hbond_plot_gmx(self):
+        path = "/Users/erik/Desktop/RAF/cry_repacking/test/3/"
+        filename = "hbond.xvg"
+        frame = 0
+        hbond = []
+        with open(path+filename) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    hbond.append(int(li[1]))
+                    frame += 1
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('frame', fontsize=20)
+        ax1.set_ylabel("hbond_num", fontsize=20)
+        ax1.scatter(range(frame), hbond, s=.8)
+        plt.show()
 
 # print(sys.argv[1])
 
@@ -2281,7 +2427,6 @@ lc = Lacomplex()
 
 # lc.numperaa()
 # lc.aveDistribution()
-# lc.rmsf_plot()
 # lc.extractFeat()
 
 # lc.merge_dis()
@@ -2290,7 +2435,7 @@ lc = Lacomplex()
 # lc.single_LDA_dih("/Users/erik/PycharmProjects/Lacomplex/forward/md50000_pbc_recover.pdb", 50000)
 # lc.LDA_trend()
 
-# lc.add_chainID("./forward.pdb")
+# lc.add_chainID("/Users/erik/Desktop/MD_WWN/REMD/new_topo/repre_310.0K/rep.c9.pdb")
 # lc.relative_sasa_statistics("MET")
 # lc.read_extract_cor()
 
@@ -2311,9 +2456,6 @@ lc = Lacomplex()
 # lc.dihdis_trend()
 # lc.disdihboth()
 # lc.rmsd_plot_gmx()
-
-# lc.repidx()  # 一个通道经历的所有温度
-# lc.crdidx()  # 一个温度经历的所有通道
 
 # lc.REMD_average()
 # lc.dih_diff_feat()
@@ -2337,7 +2479,7 @@ lc = Lacomplex()
 # lc.test_NPY()
 # lc.recover_pdb("/Users/erik/PycharmProjects/Lacomplex/reverse/{0}.pdb", "reverse")
 # lc.check_COLVAR()
-cors = [[89.132,  83.932,  25.273],
+"""cors = [[89.132,  83.932,  25.273],
         [88.872,  82.635,  25.957],
         [87.307,  82.375,  25.946],
         [86.543,  83.320,  26.804],
@@ -2345,8 +2487,21 @@ cors = [[89.132,  83.932,  25.273],
         [84.554,  83.023,  25.562],
         [84.392,  82.780,  27.718],
         [89.497,  81.386,  25.278],
-        [89.716,  80.408,  25.974]]
+        [89.716,  80.408,  25.974]]"""
 
-mass = [14,12,12,12,12,16,16,12,16]
+# mass = [14,12,12,12,12,16,16,12,16]
 
-lc.cal_COM(np.array(cors)/10., mass)
+# lc.cal_COM(np.array(cors)/10., mass)
+# lc.output_COM_restraint()
+
+lc.rmsf_plot()
+# lc.rmsd_plot_gmx()
+# lc.repidx()  # 一个通道经历的所有温度
+# lc.crdidx()  # 一个温度经历的所有通道
+# lc.rmsd_plot_amber()
+# lc.Kdist_plot()
+# lc.readHeavyAtom("/Users/erik/Desktop/RAF/WT_crystal.pdb")
+# lc.cnumvtime()
+# lc.gyrate_plot_gmx()
+# lc.find_lowest_ESeq()
+# lc.hbond_plot_gmx()
