@@ -21,6 +21,9 @@
 # 被质疑的点可能是水模型，因为水模型都是在常温下定义的
 # 可以常温高温都试一下，然后看看高温下的unfolding状态是否可以被捕获
 # 恒容高温
+# 链内氢键，侧链氢键
+# 二面角统计出现跨越
+# 平均结构的RMSD
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,6 +36,7 @@ from collections import defaultdict
 import __main__
 __main__.pymol_argv = ['pymol', '-qc']
 import pymol as pm
+import seaborn as sns
 
 np.set_printoptions(suppress=True)  # 取消科学计数显示
 np.set_printoptions(threshold=np.inf)
@@ -407,6 +411,48 @@ class Lacomplex:
         else:
             return np.array(a_atom_cor), np.array(b_atom_cor), a_atom_nam, b_atom_nam
 
+    def readHeavyAtom_singleChain(self, path) -> np.array:
+        # 读取每条链重原子的坐标，必须要有chainID的信息
+        """[[-21.368 108.599   3.145]
+            [-19.74  109.906   6.386]
+            [-19.151 113.618   6.922]
+            [-16.405 114.786   4.541]
+            ...
+            [  8.717  80.336  46.425]
+            [  7.828  76.961  48.018]
+            [  8.38   74.326  45.331]
+            [ 12.103  74.061  46.05 ]]"""
+        print("Reading:", path)
+        print("Better check out the last column in the input file!")
+        atom_cor = []
+        atom_nam = []
+
+        with open(path, 'r') as f:
+            for i in f.readlines():
+                record = i.strip()
+                atom = record[:4].strip()
+                if atom != "ATOM":  # 检测ATOM起始行
+                    continue
+                # print(record)
+                serial = record[6:11].strip()  # 697
+                atname = record[12:16].strip()  # CA
+                resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
+                if resName not in self.aa:
+                    continue
+                resSeq = record[22:26].strip()  # 3
+                cor_x = record[30:38].strip()  # Å
+                cor_y = record[38:46].strip()
+                cor_z = record[46:54].strip()
+                element = record[13].strip()  # C
+
+                xyz = [float(cor_x), float(cor_y), float(cor_z)]
+                # eg: 2-LYS-N-697
+                name = resSeq + "-" + resName + "-" + atname + "-" + serial
+                if element != "H":
+                    atom_cor.append(xyz)
+                    atom_nam.append(name)
+            return np.array(atom_cor), atom_nam
+
     def calContact(self, a_atom_cor, b_atom_cor, a_atom_nam=None, b_atom_nam=None, filename=None, save_dis=None):
         # 计算a_atom, b_atom中每个原子之间的距离矩阵,
         """             a
@@ -469,7 +515,9 @@ class Lacomplex:
             signature = -1
         else:
             signature = 1
-        return (np.arccos(np.dot(nv1, nv2)/(np.linalg.norm(nv1)*np.linalg.norm(nv2)))/np.pi)*180*signature
+
+        result = (np.arccos(np.dot(nv1, nv2)/(np.linalg.norm(nv1)*np.linalg.norm(nv2)))/np.pi)*180*signature
+        return result
 
     def dihedral_atom_order(self, atom_nam):
         n = 0
@@ -981,7 +1029,7 @@ class Lacomplex:
         plt.show()
 
     def rmsd_plot_gmx(self):  # 单位为Å
-        path = "/Users/erik/Desktop/RAF/cry_repacking/test/3/"
+        path = "/Users/erik/Desktop/RAF/crystal_WT/test/1/"
         filename = "rmsd.xvg"
         frame = 0
         rms = []
@@ -1051,8 +1099,8 @@ class Lacomplex:
         plt.show()
 
     def rmsf_plot(self):  # 单位为Å
-        file_name = 'rmsf_res'
-        target_file = "/Users/erik/Desktop/RAF/crystal_WT/test/2/" + file_name + ".xvg"
+        file_name = 'rmsf_CA'
+        target_file = "/Users/erik/Desktop/RAF/crystal_WT/test/1/" + file_name + ".xvg"
         x = [[], []]
         y = [[], []]
         chain_id = -1
@@ -1063,10 +1111,10 @@ class Lacomplex:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
-                    res_id = float(li[0])
-                    if res_id == 1:
+                    id = float(li[0])
+                    if id == 1:
                         chain_id += 1
-                    x[chain_id].append(int(res_id))  # -55
+                    x[chain_id].append(int(id))  # -55
                     y[chain_id].append(float(li[1])*10)
 
         # np.save(self.vmd_rmsd_path + file_name + ".npy", np.array(y))
@@ -1075,6 +1123,7 @@ class Lacomplex:
         ax1.set_title('Figure', fontsize=20)
         ax1.set_xlabel('residue', fontsize=20)
         ax1.set_ylabel("RMSF(Å)", fontsize=20)
+
         ax1.plot(x[0], y[0])  # 4.1G
         ax1.scatter(x[0], y[0], s=20, color="green")  # 4.1G
 
@@ -1092,6 +1141,67 @@ class Lacomplex:
 
         # either
         # ax1.scatter(self.either_index, [y[0][i - 1] for i in self.either_index], color="green")
+
+        plt.show()
+
+    def rmsf_plot_RAF(self):  # 单位为Å
+        file_name = 'rmsf_CA'
+        num = 5
+        result_crystal_WT = []
+        result_cry_repacking = []
+
+        Strand = [[4,5,6,7,8], [15,16,17,18], [43,44,45,46,47], [72,73,74,75,76,77]]
+        Alphahelix = [[25,26,27,28,29,30,31,32,33,34,35,36], [65,66,67,68]]
+
+        for i in range(1, num+1):
+            rmsf = []
+            target_file = "/Users/erik/Desktop/RAF/crystal_WT/test/{0}/".format(i) + file_name + ".xvg"
+            with open(target_file) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        rmsf.append(float(li[1]) * 10)
+            f.close()
+            result_crystal_WT.append(rmsf)
+
+        for k in range(1, num+1):
+            rmsf = []
+            target_file = "/Users/erik/Desktop/RAF/cry_repacking/test/{0}/".format(k) + file_name + ".xvg"
+            with open(target_file) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        rmsf.append(float(li[1]) * 10)
+            f.close()
+            result_cry_repacking.append(rmsf)
+
+        result_crystal_WT = np.mean(np.array(result_crystal_WT), axis=0)
+        result_cry_repacking = np.mean(np.array(result_cry_repacking), axis=0)
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('residue_CA', fontsize=20)
+        ax1.set_ylabel("RMSF(Å)", fontsize=20)
+
+        ax1.plot(range(1, len(result_crystal_WT)+1), result_crystal_WT, color="blue")
+        ax1.scatter(range(1, len(result_crystal_WT)+1), result_crystal_WT, s=20, color="blue", marker="o")
+
+        ax1.plot(range(1, len(result_cry_repacking) + 1), result_cry_repacking, color="green")
+        ax1.scatter(range(1, len(result_cry_repacking) + 1), result_cry_repacking, s=20, color="green", marker="^")
+
+        # strand
+        for strand in Strand:
+            ax1.plot(strand, [0]*len(strand), color="black")
+        # alpha
+        for alpha in Alphahelix:
+            ax1.plot(alpha, [0]*len(alpha), color="black")
 
         plt.show()
 
@@ -2376,7 +2486,7 @@ class Lacomplex:
         plt.show()
 
     def find_lowest_ESeq(self):
-        path = "/Users/erik/Desktop/RAF/designlog"
+        path = "/Users/erik/Desktop/designlog"
         E = []
         with open(path, 'r') as file:
             for i in file.readlines():
@@ -2385,30 +2495,288 @@ class Lacomplex:
 
         E = np.array(E)
         print(np.argsort(E))
-        print(E[49])
-        print(E[23])
+        print(E[245])
+        print(E[999])
 
     def hbond_plot_gmx(self):
-        path = "/Users/erik/Desktop/RAF/cry_repacking/test/3/"
+        num = 5
         filename = "hbond.xvg"
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('hbond_num', fontsize=20)
+        ax1.set_ylabel("freq", fontsize=20)
+
+        path_crystal_WT = "/Users/erik/Desktop/RAF/crystal_WT/test/{0}/"
+        path_cry_repacking = "/Users/erik/Desktop/RAF/cry_repacking/test/{0}/"
+
         frame = 0
-        hbond = []
-        with open(path+filename) as f:
+        hbond_crystal_WT = []
+        for p in range(1, num + 1):
+            with open(path_crystal_WT.format(p) + filename) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        hbond_crystal_WT.append(int(li[1]))
+                        frame += 1
+
+        frame = 0
+        hbond_cry_repacking = []
+        for o in range(1, num+1):
+            with open(path_cry_repacking.format(o)+filename) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        hbond_cry_repacking.append(int(li[1]))
+                        frame += 1
+
+        # ax1.scatter(range(frame), hbond, s=.8)
+        # print(len(hbond_cry_repacking))
+        # print(hbond_crystal_WT)
+        # print(hbond_cry_repacking)
+
+        # ax1.hist(hbond_cry_repacking, bins=100, color="green")
+        # ax1.hist(hbond_crystal_WT, bins=100, color="blue")
+        sns.kdeplot(hbond_crystal_WT, shade=True, color="blue", bw_method=.2)
+        sns.kdeplot(hbond_cry_repacking, shade=True, color="green", bw_method=.2)
+
+        plt.show()
+
+    def gather_dihedral_atom_singChain(self, path, type=None):
+        result = []
+        atoms = ["CA", "N", "C"]
+        atom_cor, atom_nam = self.readHeavyAtom_singleChain(path)
+        ang_atom_cor = []
+
+        self.dihedral_atom_order(atom_nam)
+
+        for k in range(len(atom_nam)):
+            if atom_nam[k].split("-")[2] in atoms:  # 把组成二面角原子的坐标加入
+                ang_atom_cor.append(atom_cor[k])
+
+        if type == "Phi":
+            ang_atom_cor.reverse()
+
+        ang_atom_cor = np.array(ang_atom_cor)
+        ang_residue = []
+
+        for m in range(1, int(ang_atom_cor.shape[0] / 3) + 1):
+            ang_residue.append(ang_atom_cor[3 * (m - 1):3 * m + 1])
+
+        for q in ang_residue:
+            result.append(self.dihedral(q[0], q[1], q[2], q[3]) if q.shape[0] == 4 else 360)
+
+        if type == "Phi":
+            result.reverse()
+
+        return result
+
+    def rmsd_plot_gmx_inter(self):  # 单位为Å
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        num = 5  # the num of simulation
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('Time(ns)', fontsize=20)
+        ax1.set_ylabel("Backbone RMSD(Å)", fontsize=20)
+
+        for i in range(1, num+1):
+            path = "/Users/erik/Desktop/RAF/crystal_WT/test/{0}/".format(i)
+            filename = "rmsd.xvg"
+            frame = 0
+            interval = 0.02 # ns
+            rms = []
+            time = []
+            with open(path+filename) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        rms.append(float(li[1])*10)  # Å
+                        time.append(frame*interval)
+                        frame += 1
+            f.close()
+
+            ax1.plot([time[p * 50] for p in range(int(len(time) / 50))],
+                     [rms[p * 50] for p in range(int(len(rms) / 50))],
+                     color="blue", label="crystal_WT")
+            print("crystal_WT_RMSD{0}:".format(i), np.mean(rms))
+
+        for k in range(1, num+1):
+            path = "/Users/erik/Desktop/RAF/cry_repacking/test/{0}/".format(k)
+            filename = "rmsd.xvg"
+            frame = 0
+            interval = 0.02 # ns
+            rms = []
+            time = []
+            with open(path+filename) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        rms.append(float(li[1])*10)  # Å
+                        time.append(frame*interval)
+                        frame += 1
+            f.close()
+            # ax1.plot(time, rms, color="green")
+            ax1.plot([time[p * 50] for p in range(int(len(time)/50))],
+                     [rms[p*50] for p in range(int(len(rms)/50))],
+                     color="green", label="cry_repacking")
+            print("cry_repacking_RMSD{0}:".format(k), np.mean(rms))
+
+        """plt.gca().margins(x=0)
+                plt.gcf().canvas.draw()
+
+                N = 25000
+                maxsize = 30
+                m = 0.1  # inch margin
+                s = maxsize / plt.gcf().dpi * N + 2 * m
+                margin = m / plt.gcf().get_size_inches()[0]
+
+                plt.gcf().subplots_adjust(left=margin, right=1. - margin)
+                plt.gcf().set_size_inches(s, plt.gcf().get_size_inches()[1])"""
+        plt.legend()
+        plt.show()
+
+    def rmsd_plot_gmx_intra(self):  # 单位为Å
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        target = 1  # the serial of simulation
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('Time(ns)', fontsize=20)
+        ax1.set_ylabel("Backbone RMSD(Å)", fontsize=20)
+        interval = 0.02  # ns
+
+        path_1 = "/Users/erik/Desktop/RAF/crystal_WT/test/{0}/".format(target)
+        path_2 = "/Users/erik/Desktop/RAF/cry_repacking/test/{0}/".format(target)
+
+        filename = "rmsd.xvg"
+        frame = 0
+        rms_1 = []
+        time_1 = []
+        with open(path_1+filename) as f:
             for j in f.readlines():
                 record = j.strip()
                 if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
-                    hbond.append(int(li[1]))
+                    rms_1.append(float(li[1])*10)  # Å
+                    time_1.append(frame*interval)
                     frame += 1
+
+        frame = 0
+        rms_2 = []
+        time_2 = []
+        with open(path_2 + filename) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    rms_2.append(float(li[1]) * 10)  # Å
+                    time_2.append(frame * interval)
+                    frame += 1
+
+        ax1.scatter(time_1, rms_1, s=.8, label="crystal_WT")
+        ax1.scatter(time_2, rms_2, s=.8, label="cry_repacking")
+        plt.legend()
+        plt.show()
+
+    def dih_RAF(self):
+        crystal_WT_phi = []
+        crystal_WT_psi = []
+        cry_repacking_phi = []
+        cry_repacking_psi = []
+        serial = 5
+        num = 10
+
+        Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
+        Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
+
+        for k in range(1, serial+1):
+            for i in range(1, num+1):
+                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/test/{1}/phi_{0}.npy".format(i, k), allow_pickle=True)
+                crystal_WT_phi += sample.tolist()
+            for i in range(1, num+1):
+                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/test/{1}/psi_{0}.npy".format(i, k), allow_pickle=True)
+                crystal_WT_psi += sample.tolist()
+            for i in range(1, num+1):
+                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/test/{1}/phi_{0}.npy".format(i, k), allow_pickle=True)
+                cry_repacking_phi += sample.tolist()
+            for i in range(1, num+1):
+                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/test/{1}/psi_{0}.npy".format(i, k), allow_pickle=True)
+                cry_repacking_psi += sample.tolist()
+
+        print(len(crystal_WT_phi))
+        print(len(cry_repacking_phi))
+
+        crystal_WT_phi_mean = np.mean(np.array(crystal_WT_phi), axis=0)
+        crystal_WT_psi_mean = np.mean(np.array(crystal_WT_psi), axis=0)
+        cry_repacking_phi_mean = np.mean(np.array(cry_repacking_phi), axis=0)
+        cry_repacking_psi_mean = np.mean(np.array(cry_repacking_psi), axis=0)
+
+        crystal_WT_phi_std = np.std(np.array(crystal_WT_phi), axis=0)
+        crystal_WT_psi_std = np.std(np.array(crystal_WT_psi), axis=0)
+        cry_repacking_phi_std = np.std(np.array(cry_repacking_phi), axis=0)
+        cry_repacking_psi_std = np.std(np.array(cry_repacking_psi), axis=0)
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('Figure', fontsize=20)
-        ax1.set_xlabel('frame', fontsize=20)
-        ax1.set_ylabel("hbond_num", fontsize=20)
-        ax1.scatter(range(frame), hbond, s=.8)
+        ax1.set_xlabel('residues', fontsize=20)
+        ax1.set_ylabel("Dihedral", fontsize=20)
+
+        # ax1.errorbar(range(1, len(crystal_WT_phi_mean) + 1), crystal_WT_phi_mean, yerr=crystal_WT_phi_std, fmt="o", color="blue", )
+        # ax1.errorbar(range(1, len(crystal_WT_psi_mean) + 1), crystal_WT_psi_mean, yerr=crystal_WT_psi_std, fmt="o", color="blue")
+
+        # ax1.errorbar(range(1, len(cry_repacking_phi_mean) + 1), cry_repacking_phi_mean, yerr=cry_repacking_phi_std, fmt="^", color="green", elinewidth=2)
+        # ax1.errorbar(range(1, len(cry_repacking_psi_mean) + 1), cry_repacking_psi_mean, yerr=cry_repacking_psi_std, fmt="^", color="green")
+
+        test = np.array(crystal_WT_phi)[:,21]
+        # print(np.where(test>-76))
+
+        for i in np.where(test>-76)[0]:
+            if test[i]<-74:
+                print(i, test[i])
+
+        for i in np.where(test>74)[0]:
+            if test[i]<76:
+                print(i, test[i])
+
+        ax1.hist(test, bins=100)
+
+        mid = np.sort(test)[int(len(crystal_WT_phi)/2)]
+
+        diff = test - mid
+
+        diff = np.where(np.abs(diff)>=180, diff-180, diff)
+
+        print("mid:", mid)
+        print("max:", np.max(test))
+        print("min:", np.min(test))
+        print("std:", np.std(test))
+        print("mid_std:", np.std(diff))
+
+        # print(cry_repacking_psi_mean[19], cry_repacking_psi_std[19])
+
+        # strand
+        for strand in Strand:
+            ax1.plot(strand, [-220] * len(strand), color="black")
+        # alpha
+        for alpha in Alphahelix:
+            ax1.plot(alpha, [-220] * len(alpha), color="black")
+
         plt.show()
 
 # print(sys.argv[1])
@@ -2494,7 +2862,7 @@ lc = Lacomplex()
 # lc.cal_COM(np.array(cors)/10., mass)
 # lc.output_COM_restraint()
 
-lc.rmsf_plot()
+# lc.rmsf_plot_RAF()
 # lc.rmsd_plot_gmx()
 # lc.repidx()  # 一个通道经历的所有温度
 # lc.crdidx()  # 一个温度经历的所有通道
@@ -2505,3 +2873,11 @@ lc.rmsf_plot()
 # lc.gyrate_plot_gmx()
 # lc.find_lowest_ESeq()
 # lc.hbond_plot_gmx()
+# cor, name = lc.readHeavyAtom_singleChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb")
+# Phi = lc.gather_dihedral_atom_singChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb", type="Phi")
+# print(Phi)
+# lc.rmsd_plot_gmx_intra()
+# lc.rmsd_plot_gmx_inter()
+# lc.rmsd_plot_gmx()
+# lc.dihdis_trend()
+lc.dih_RAF()
