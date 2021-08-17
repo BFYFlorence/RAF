@@ -1,23 +1,3 @@
-# 对于副本交换的数据，追踪一段轨迹内遍历的温度是否均匀；还可以把同一个温度下的轨迹收集起来做聚类，与实验结果比较
-# 把REMD的轨迹求平均，大概就算跨了温度也无所谓
-# 温度副本交换MD一般来说低温度的要密集一些，高温的要稀疏一些
-# 对于一个副本经历的温度，看一下它的结构覆盖是否齐全，若是齐全的话就没必要那么高的温度，检查其收敛性，有没有一直保持在一个温度
-# 还可以检查一下回旋半径和二级结构的数量，监测其松散程度
-# 质心的约束
-# 小红师姐的课题，对于为什么出现模拟崩溃的现象，有一种可能的原因是恒温器的问题，再进一步解释是质心运动，但是我现在还没搞懂速度缩放和温度控制之间的关系
-# rmsd约束每一个亚结构域，升高温度，再投影到三维？
-
-# 被质疑的点可能是水模型，因为水模型都是在常温下定义的
-# 可以常温高温都试一下，然后看看高温下的unfolding状态是否可以被捕获
-# 恒容高温
-# 链内氢键，侧链氢键
-# 二面角分为每个轨迹分开看
-# 不同组的平均结构之间做rmsd比较
-# 范德华/静电(长程短程)比较
-# 计算氢键时考虑一下水分子的数量，必要时除一下数目
-# 名称改掉，一个是WT，一个是WT_repacking，一个是dRafX6
-# 检查WT384K的rmsd为什么这么小，可以使用最后100ns的轨迹再计算一次rmsd
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -26,9 +6,9 @@ import pandas as pd
 from matplotlib.pyplot import MultipleLocator
 import os
 from collections import defaultdict
-import __main__
-__main__.pymol_argv = ['pymol', '-qc']
-import pymol as pm
+# import __main__
+# __main__.pymol_argv = ['pymol', '-qc']
+# import pymol as pm
 import seaborn as sns
 from scipy import stats
 
@@ -208,7 +188,7 @@ def testmodels(self):
     print(pro1)
     print(np.where(pro1==np.min(pro1)))"""
 
-class Lacomplex:
+class RAF:
     def __init__(self):
         self.contact_dis = 4.5  # 重原子之间的contact距离
         self.startFrame = 1  # 首帧
@@ -233,7 +213,7 @@ class Lacomplex:
         self.csv_name = "{0}.csv"  # 每一张表的名称
 
         self.vmd_rmsd_path = "/Users/erik/Desktop/MD_WWN/test_100ns/"
-        self.rmsd_name = "trajrmsd.dat"
+        self.RAF_backbone_mass = [14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01]
         self.sasa_max = {"GLY": 87.6,
                          "ALA": 111.9,
                          "VAL": 154.4,
@@ -278,6 +258,24 @@ class Lacomplex:
             for j in range(data.shape[1]):
                 data[i][j] = (data[i][j] - min_val) / (max_val - min_val)
         return data
+
+    def thin_data(self, li, fold=20):  # randomly
+        y = []
+        for i in li:
+            t = np.random.uniform(low=0, high=1)
+            if t < 1.0/fold:
+                y.append(i)
+        return y
+
+    def space_data(self, li, interval=20):  # interval
+        y = []
+        count = 0
+        for i in li:
+            if count % interval == 0:
+                y.append(i)
+                count %= interval
+            count += 1
+        return y
 
     def readHeavyAtom_singleChain(self, path) -> np.array:
         # 读取每条链重原子的坐标，必须要有chainID的信息
@@ -440,29 +438,36 @@ class Lacomplex:
         # np.save(path+"rmsd.npy", np.array(rms))
 
     def gyrate_plot_gmx(self):  # 单位为Å
-        path = "/Users/erik/Desktop/RAF/crystal_WT/384K/1/"
-        filename = "gyrate.xvg"
-        frame = 0
-        gyrate = []
-        with open(path+filename) as f:
-            for j in f.readlines():
-                record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
-                    break
-                if record[0] not in ["#", "@"]:
-                    li = record.split()
-                    gyrate.append(float(li[1])*10)  # Å
-                    frame += 1
+        # crystal_WT
+        # dRafX6
+        num = 5
+        WD = "/Users/erik/Desktop/RAF"
+        group = "crystal_WT"
+        temperatures = ["300K", "344K", "384K"]
+        interval = 0.02  # ns
 
-        print(np.mean(gyrate))
-        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('Figure', fontsize=20)
-        ax1.set_xlabel('frame', fontsize=20)
-        ax1.set_ylabel("gyrate(Å)", fontsize=20)
-        ax1.scatter(range(frame), gyrate, s=.8)
+        for temperature in temperatures:
+            fig = plt.figure(num=1, figsize=(15, 8), dpi=200)
+            dir_name = "/".join((WD, group, temperature, "gyrate"))
+            for k in range(1, num + 1):
+                if not os.path.exists(dir_name):
+                    os.mkdir(dir_name)
+                path = "/".join((WD, group, temperature, str(k), "gyrate.xvg"))
+                gyrate = self.read_gyrate_gmx(path)
+                average_gyrate = np.mean(gyrate)
+                # print(len(rms))
+                ax1 = fig.add_subplot(2, 3, k)
+                ax1.cla()
+                ax1.set_title(group + '_' + temperature, fontsize=20)
+                ax1.set_xlabel('time(ns)', fontsize=2)
+                ax1.set_ylabel("gyrate(Å)", fontsize=10)
+                ax1.scatter(np.array(range(len(gyrate))) * interval, gyrate, s=.1)
+                ax1.plot([0, 500], [average_gyrate, average_gyrate], color="red")
+                # print(np.mean(rms))
 
-        plt.show()
+            plt.savefig(dir_name + "/gyrate_5.png")
+        # plt.legend()
+        # plt.show()
 
     def rmsf_plot(self):  # 单位为Å
         file_name = 'rmsf_CA'
@@ -667,15 +672,16 @@ class Lacomplex:
         plt.hist(result, bins=100, facecolor="blue", edgecolor="black", alpha=0.7)
         plt.show()
 
-    def rmsd_between(self, name1, name2, prefix_path):
-        pm.finish_launching()
-        pm.cmd.load(prefix_path + '/' + name1 + ".pdb")
-        pm.cmd.load(prefix_path + '/' + name2 + ".pdb")
-
-        pm.cmd.select("bb1", "(name CA+N+C) & " + name1)
-        pm.cmd.select("bb2", "(name CA+N+C) & " + name2)
-
-        return pm.cmd.rms("bb1","bb2")
+    def rmsd_between(self, path1, path2, part):
+        os.system("echo 4 {2} | gmx rms -s {0} -f {1} -o rmsd_log.xvg -mw yes".format(path1, path2, part))
+        with open("./rmsd_log.xvg", 'r') as file:
+            for i in file.readlines():
+                record = i.strip()
+                if record[0] not in ["#", "@"]:
+                    record = record.split()
+                    rmsd = float(record[-1])*10.  # Å
+        file.close()
+        return rmsd
 
     def add_chainID(self, file_path):
         chain_ID = ["A", "B"]
@@ -712,7 +718,6 @@ class Lacomplex:
                     li = record.split()
                     rms.append(float(li[1]) * 10)  # Å
                     frame += 1
-
         return rms
 
     def rmsf_plot_amber(self):
@@ -1069,7 +1074,7 @@ class Lacomplex:
         plt.show()
 
     def find_lowest_ESeq(self):
-        path = "/Users/erik/Desktop/designlog"
+        path = "/Users/erik/Desktop/RAF/designlog"
         E = []
         with open(path, 'r') as file:
             for i in file.readlines():
@@ -1077,59 +1082,72 @@ class Lacomplex:
                 E.append(float(record[-2]))
 
         E = np.array(E)
-        print(np.argsort(E))
-        print(E[245])
-        print(E[999])
+        print(np.argsort(E))  # 升序
+        print(E[0])
+        print(E[99])
 
     def hbond_plot_gmx(self):
         num = 5
-        filename = "hbond.xvg"
-        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)
-        ax1.set_title('Figure', fontsize=20)
-        ax1.set_xlabel('hbond_num', fontsize=20)
-        ax1.set_ylabel("freq", fontsize=20)
+        WD = "/Users/erik/Desktop/RAF"
+        group1 = "crystal_WT"
+        group2 = "dRafX6"
+        temperatures = ["300K", "344K", "384K"]
+        filenames = ["hbond_SS", "hbond_SM", "hbond_SW", "hbond_MW"]
 
-        path_crystal_WT = "/Users/erik/Desktop/RAF/crystal_WT/test/{0}/"
-        path_cry_repacking = "/Users/erik/Desktop/RAF/cry_repacking/test/{0}/"
+        paths = ["/".join((WD, "HBOND")),
+                 "/".join((WD, "HBOND", "{0}_vs_{1}".format(group1, group2)))]
+        for dir_name in paths:
+            if not os.path.exists(dir_name):
+                os.mkdir(dir_name)
 
-        frame = 0
-        hbond_crystal_WT = []
-        for p in range(1, num + 1):
-            with open(path_crystal_WT.format(p) + filename) as f:
-                for j in f.readlines():
-                    record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
-                        break
-                    if record[0] not in ["#", "@"]:
-                        li = record.split()
-                        hbond_crystal_WT.append(int(li[1]))
-                        frame += 1
+        for temperature in temperatures:
+            fig, ax_arr = plt.subplots(2, 2, figsize=(15, 8))
+            for filename in range(len(filenames)):
+                hbondgroup1 = []
+                hbondgroup2 = []
+                for k in range(1, num+1):
+                    pathgroup1 = "/".join((WD, group1, temperature, str(k)))
+                    pathgroup2 = "/".join((WD, group2, temperature, str(k)))
 
-        frame = 0
-        hbond_cry_repacking = []
-        for o in range(1, num+1):
-            with open(path_cry_repacking.format(o)+filename) as f:
-                for j in f.readlines():
-                    record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
-                        break
-                    if record[0] not in ["#", "@"]:
-                        li = record.split()
-                        hbond_cry_repacking.append(int(li[1]))
-                        frame += 1
+                    pathgroup1 = pathgroup1 + "/{0}.xvg".format(filenames[filename])
+                    pathgroup2 = pathgroup2 + "/{0}.xvg".format(filenames[filename])
+                    # print(pathgroup1)
+                    # print(pathgroup2)
 
-        # ax1.scatter(range(frame), hbond, s=.8)
-        # print(len(hbond_cry_repacking))
-        # print(hbond_crystal_WT)
-        # print(hbond_cry_repacking)
+                    with open(pathgroup1) as file:
+                        for j in file.readlines():
+                            record = j.strip()
+                            if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                                break
+                            if record[0] not in ["#", "@"]:
+                                li = record.split()
+                                hbondgroup1.append(int(li[1]))
+                    file.close()
+
+                    with open(pathgroup2) as file:
+                        for j in file.readlines():
+                            record = j.strip()
+                            if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                                break
+                            if record[0] not in ["#", "@"]:
+                                li = record.split()
+                                hbondgroup2.append(int(li[1]))
+                    file.close()
+                    # print(len(hbondgroup1))
+                    # print(len(hbondgroup2))
+
+                """ax1 = fig.add_subplot(2, 2, filename+1)
+                ax1.cla()
+                ax1.set_title(filenames[filename], fontsize=20)
+                ax1.set_xlabel('hbond_num', fontsize=2)
+                ax1.set_ylabel("freq", fontsize=2)"""
+                sns.kdeplot(np.array(hbondgroup1), shade=True, color="blue", bw_method=.3, ax=ax_arr[filename//2][filename%2]).set_title(filenames[filename])
+                sns.kdeplot(np.array(hbondgroup2), shade=True, color="red", bw_method=.3, ax=ax_arr[filename//2][filename%2])
+            # plt.show()
+            plt.savefig("/".join((WD, "HBOND", "{0}_vs_{1}".format(group1, group2), temperature+".png")))
 
         # ax1.hist(hbond_cry_repacking, bins=100, color="green")
         # ax1.hist(hbond_crystal_WT, bins=100, color="blue")
-        sns.kdeplot(hbond_crystal_WT, shade=True, color="blue", bw_method=.2)
-        sns.kdeplot(hbond_cry_repacking, shade=True, color="green", bw_method=.2)
-
-        plt.show()
 
     def gather_dihedral_atom_singChain(self, path, type=None):
         result = []
@@ -1161,75 +1179,39 @@ class Lacomplex:
         return result
 
     def rmsd_plot_gmx_inter(self):  # 单位为Å
-        group = "344K"
-        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)
-        num = 5  # the num of simulation
-        ax1.set_title('Figure', fontsize=20)
-        ax1.set_xlabel('Time(ns)', fontsize=20)
-        ax1.set_ylabel("Backbone RMSD(Å)", fontsize=20)
+        # crystal_WT
+        # dRafX6
+        num = 2
+        WD = "/Users/erik/Desktop/RAF"
+        group = "crystal_WT"
+        temperatures = ["384K"]
+        interval = 0.02  # ns
 
-        for i in range(1, num+1):
-            path = "/Users/erik/Desktop/RAF/crystal_WT/{1}/{0}/".format(i, group)
-            filename = "rmsd.xvg"
-            frame = 0
-            interval = 0.02  # ns
-            rms = []
-            time = []
-            with open(path+filename) as f:
-                for j in f.readlines():
-                    record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
-                        break
-                    if record[0] not in ["#", "@"]:
-                        li = record.split()
-                        rms.append(float(li[1])*10)  # Å
-                        time.append(frame*interval)
-                        frame += 1
-            f.close()
-
-            ax1.plot([time[p * 50] for p in range(int(len(time) / 50))],
-                     [rms[p * 50] for p in range(int(len(rms) / 50))],
-                     color="blue", label="crystal_WT")
-            print("crystal_WT_RMSD{0}:".format(i), np.mean(rms))
-
-        for k in range(1, num+1):
-            path = "/Users/erik/Desktop/RAF/cry_repacking/{1}/{0}/".format(k, group)
-            filename = "rmsd.xvg"
-            frame = 0
-            interval = 0.02  # ns
-            rms = []
-            time = []
-            with open(path+filename) as f:
-                for j in f.readlines():
-                    record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
-                        break
-                    if record[0] not in ["#", "@"]:
-                        li = record.split()
-                        rms.append(float(li[1])*10)  # Å
-                        time.append(frame*interval)
-                        frame += 1
-            f.close()
-            # ax1.plot(time, rms, color="green")
-            ax1.plot([time[p * 50] for p in range(int(len(time)/50))],
-                     [rms[p*50] for p in range(int(len(rms)/50))],
-                     color="green", label="cry_repacking")
-            print("cry_repacking_RMSD{0}:".format(k), np.mean(rms))
-
-        """plt.gca().margins(x=0)
-                plt.gcf().canvas.draw()
-
-                N = 25000
-                maxsize = 30
-                m = 0.1  # inch margin
-                s = maxsize / plt.gcf().dpi * N + 2 * m
-                margin = m / plt.gcf().get_size_inches()[0]
-
-                plt.gcf().subplots_adjust(left=margin, right=1. - margin)
-                plt.gcf().set_size_inches(s, plt.gcf().get_size_inches()[1])"""
-        plt.legend()
-        plt.show()
+        for temperature in temperatures:
+            fig = plt.figure(num=1, figsize=(15, 8), dpi=200)
+            dir_name = "/".join((WD, group, temperature, "RMSD"))
+            print(temperature+":")
+            list_ave = []
+            for k in range(11, 13):
+                if not os.path.exists(dir_name):
+                    os.mkdir(dir_name)
+                path = "/".join((WD, group, temperature, str(k), "rmsd_500ns.xvg"))
+                print(path)
+                rms = self.read_rmsd_gmx(path)
+                average_rms = np.mean(rms)
+                list_ave.append(average_rms)
+                print(average_rms, len(rms))
+                ax1 = fig.add_subplot(2, 3, k-10)
+                ax1.cla()
+                ax1.set_title(group+'_'+temperature, fontsize=20)
+                ax1.set_xlabel('time(ns)', fontsize=2)
+                ax1.set_ylabel("Backbone RMSD(Å)", fontsize=10)
+                ax1.scatter(np.array(range(len(rms)))*interval, rms, s=.1)
+                ax1.plot([0, 500], [average_rms, average_rms], color="red")
+            print("ave:", np.mean(list_ave))
+            plt.savefig(dir_name+"/rmsd_5.png")
+        # plt.legend()
+        # plt.show()
 
     def rmsd_plot_gmx_intra(self):  # 单位为Å
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
@@ -1564,10 +1546,17 @@ class Lacomplex:
         plt.show()
 
     def dih_RAF_5(self):
+        WD = "/Users/erik/Desktop/RAF"
         serial = 5
         num = 10
-        temperature = "300K"
-
+        temperature = "384K"
+        group = "dRafX6"
+        paths = ['/'.join((WD, group, temperature, "dih_5")),
+                 '/'.join((WD, group, temperature, "dih_5", "phi")),
+                 '/'.join((WD, group, temperature, "dih_5", "psi"))]
+        for dir_name in paths:
+            if not os.path.exists(dir_name):
+                os.mkdir(dir_name)
         # 残基序号
         Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
         Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
@@ -1589,7 +1578,7 @@ class Lacomplex:
             for k in range(1, serial + 1):
                 crystal_WT_phi = []
                 for i in range(1, num + 1):
-                    sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/phi_{0}.npy".format(i, k, temperature),
+                    sample = np.load("/Users/erik/Desktop/RAF/{3}/{2}/{1}/phi_{0}.npy".format(i, k, temperature, group),
                                      allow_pickle=True).tolist()
                     crystal_WT_phi += sample
 
@@ -1600,13 +1589,13 @@ class Lacomplex:
                 ax1.set_ylabel("Dihedral", fontsize=5)
                 ax1.hist(crystal_WT_phi[:,p], bins=100)
             plt.savefig(
-                "/Users/erik/Desktop/RAF/crystal_WT/{1}/dih_5/phi/{0}_phi.png".format(p+1, temperature))
+                "/Users/erik/Desktop/RAF/{2}/{1}/dih_5/phi/{0}_phi.png".format(p+1, temperature, group))
 
             fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
             for k in range(1, serial + 1):
                 crystal_WT_psi = []
                 for i in range(1, num + 1):
-                    sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/psi_{0}.npy".format(i, k, temperature),
+                    sample = np.load("/Users/erik/Desktop/RAF/{3}/{2}/{1}/psi_{0}.npy".format(i, k, temperature, group),
                                      allow_pickle=True).tolist()
                     crystal_WT_psi += sample
                 crystal_WT_psi = np.array(crystal_WT_psi)
@@ -1616,70 +1605,214 @@ class Lacomplex:
                 ax1.set_ylabel("Dihedral", fontsize=5)
                 ax1.hist(crystal_WT_psi[:, p], bins=100)
             plt.savefig(
-                "/Users/erik/Desktop/RAF/crystal_WT/{1}/dih_5/psi/{0}_psi.png".format(p + 1, temperature))
-
-            fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-            for k in range(1, serial + 1):
-                dRafX6_phi = []
-                for i in range(1, num + 1):
-                    sample = np.load("/Users/erik/Desktop/RAF/dRafX6/{2}/{1}/phi_{0}.npy".format(i, k, temperature),
-                                     allow_pickle=True).tolist()
-                    dRafX6_phi += sample
-                dRafX6_phi = np.array(dRafX6_phi)
-                ax1 = fig.add_subplot(2, 3, k)
-                ax1.cla()
-                ax1.set_xlabel('residues', fontsize=5)
-                ax1.set_ylabel("Dihedral", fontsize=5)
-                ax1.hist(dRafX6_phi[:, p], bins=100)
-            plt.savefig(
-                "/Users/erik/Desktop/RAF/dRafX6/{1}/dih_5/phi/{0}_phi.png".format(p + 1, temperature))
-
-            fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-            for k in range(1, serial + 1):
-                dRafX6_psi = []
-                for i in range(1, num + 1):
-                    sample = np.load("/Users/erik/Desktop/RAF/dRafX6/{2}/{1}/psi_{0}.npy".format(i, k, temperature),
-                                     allow_pickle=True).tolist()
-                    dRafX6_psi += sample
-                dRafX6_psi = np.array(dRafX6_psi)
-                ax1 = fig.add_subplot(2, 3, k)
-                ax1.cla()
-                ax1.set_xlabel('residues', fontsize=5)
-                ax1.set_ylabel("Dihedral", fontsize=5)
-                ax1.hist(dRafX6_psi[:, p], bins=100)
-            plt.savefig(
-                "/Users/erik/Desktop/RAF/dRafX6/{1}/dih_5/psi/{0}_psi.png".format(p + 1, temperature))
+                "/Users/erik/Desktop/RAF/{2}/{1}/dih_5/psi/{0}_psi.png".format(p + 1, temperature, group))
 
         seqlen = len(WT_seq)
         samplelen = len(crystal_WT_phi)
         print(seqlen, samplelen)
 
+    def LJ_SR_5(self):
+        serial = 5
+        group = "dRafX6"
+        temperature = "384K"
+        path = "/Users/erik/Desktop/RAF/{0}/{1}/{2}/E_LJ_SR.xvg"
+        inter = 20
+        dt = 0.02  # ns
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, serial+1):
+            LJ_SR = []
+            with open(path.format(group, temperature, k), "r") as file:
+                for i in file.readlines():
+                    if i[0] not in ["#","@"]:
+                        record = i.strip().split()
+                        LJ_SR.append(float(record[-1]))
+
+            LJ_SR = self.space_data(li=LJ_SR, interval=inter)
+            print(len(LJ_SR))
+            file.close()
+            ax1 = fig.add_subplot(2, 3, k)
+            ax1.cla()
+            ax1.set_xlabel('time(ns)', fontsize=5)
+            ax1.set_ylabel("LJ_SR", fontsize=5)
+            ax1.plot(np.array([l for l in range(len(LJ_SR))])*(dt*inter),
+                     LJ_SR)
+        plt.show()
+
+    def E_Tem(self):
+        serial = 5
+        group = "dRafX6"
+        temperature = "384K"
+        path = "/Users/erik/Desktop/RAF/{0}/{1}/{2}/E_Tem.xvg"
+        inter = 20
+        dt = 0.02  # ns
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, serial+1):
+            Tem = []
+            with open(path.format(group, temperature, k), "r") as file:
+                for i in file.readlines():
+                    if i[0] not in ["#","@"]:
+                        record = i.strip().split()
+                        Tem.append(float(record[-1]))
+
+            Tem = self.space_data(li=Tem, interval=inter)
+            print(len(Tem))
+            file.close()
+            ax1 = fig.add_subplot(2, 3, k)
+            ax1.cla()
+            ax1.set_xlabel('time(ns)', fontsize=5)
+            ax1.set_ylabel("Tem", fontsize=5)
+            ax1.plot(np.array([l for l in range(len(Tem))])*(dt*inter),
+                     Tem)
+        plt.show()
+
+    def E_Coulomb_SR(self):
+        serial = 5
+        group = "dRafX6"
+        temperature = "384K"
+        path = "/Users/erik/Desktop/RAF/{0}/{1}/{2}/E_Coulomb_SR.xvg"
+        inter = 20
+        dt = 0.02  # ns
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        for k in range(1, serial + 1):
+            Coulomb_SR = []
+            with open(path.format(group, temperature, k), "r") as file:
+                for i in file.readlines():
+                    if i[0] not in ["#", "@"]:
+                        record = i.strip().split()
+                        Coulomb_SR.append(float(record[-1]))
+
+            Coulomb_SR = self.space_data(li=Coulomb_SR, interval=inter)
+            print(len(Coulomb_SR))
+            file.close()
+            ax1 = fig.add_subplot(2, 3, k)
+            ax1.cla()
+            ax1.set_xlabel('time(ns)', fontsize=5)
+            ax1.set_ylabel("Coulomb_SR", fontsize=5)
+            ax1.plot(np.array([l for l in range(len(Coulomb_SR))]) * (dt * inter),
+                     Coulomb_SR)
+        plt.show()
+
+    def construct_rmsd_matrix(self):  # used for ave.pdb for now
+        part = 4  # 4 for backbone(BB); 8 for sidechain(SC) in most cases
+        WD = "/home/caofan/RAF/"
+        group = "crystal_WT"  # "dRafX6"
+        temperatures = ["300K", "344K", "384K"]
+        rmsd_mat = np.zeros(shape=(15,15), dtype=np.float32)
+        paths = []
+        names = []
+        serial = 5
+        for temperature in temperatures:
+            for k in range(1, serial+1):
+                paths.append(WD
+                            +'{0}/{1}/{2}/'.format(group, temperature, k))
+                names.append("{0}/{1}/{2}".format(group, temperature, k))
+
+        for p in range(len(paths)):
+            path1 = paths[p]
+            for q in range(p+1, len(paths)):
+                path2 = paths[q]
+                rmsd_mat[p][q] = self.rmsd_between(path1=path1+"pro_ave.pdb", path2=path2+"pro_ave.pdb", part=part)
+
+        print(rmsd_mat)
+        np.save("./rmsd_{0}_{1}.npy".format(group, "BB" if part==4 else "SC"), rmsd_mat)
+
+        rmsd_mat = np.load("./rmsd_{0}_{1}.npy".format(group, "BB" if part==4 else "SC"), allow_pickle=True)
+        df = pd.DataFrame(rmsd_mat)
+        df.columns = names
+        df.index = names
+        df.to_csv("./rmsd_{0}_{1}.csv".format(group, "BB" if part==4 else "SC"))
+
+    def self_rmsd(self):
+        part = 4  # 4 for backbone(BB); 8 for sidechain(SC) in most cases
+        WD = "/home/caofan/RAF/"
+        group = "crystal_WT"  # "dRafX6"
+        temperatures = ["300K", "344K", "384K"]
+        rmsd_mat = np.zeros(shape=(3, 5), dtype=np.float32)
+        serial = 5
+        for temperature in range(len(temperatures)):
+            for k in range(1, serial + 1):
+                path = WD + '{0}/{1}/{2}/'.format(group, temperatures[temperature], k)
+                rmsd_mat[temperature][k-1] = self.rmsd_between(path1=path + "md{0}.tpr".format(temperatures[temperature]), path2=path + "pro_ave.pdb", part=part)
+
+        print(rmsd_mat)
+        np.save("./self_rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), rmsd_mat)
+
+        rmsd_mat = np.load("./self_rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), allow_pickle=True)
+        df = pd.DataFrame(rmsd_mat)
+        df.columns = [k+1 for k in range(serial)]
+        df.index = temperatures
+        df.to_csv("./self_rmsd_{0}_{1}.csv".format(group, "BB" if part == 4 else "SC"))
+
+    def rmsd_heatmap(self):
+        # crystal_WT
+        # dRafX6
+        WD = "/Users/erik/Desktop/RAF/"
+        dirname = "RMSD/"
+
+        filename = "rmsd_dRafX6_SC"
+        path = WD + dirname
+
+        data = np.load(path+filename+".npy")
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('rmsd_heatmap', fontsize=20)
+        ax1.set_xlabel(filename, fontsize=20)
+        # ax1.set_ylabel("Projection_2", fontsize=20)
+        im = ax1.imshow(data, cmap=plt.cm.hot_r)
+        # 增加右侧的颜色刻度条
+        plt.colorbar(im)
         # plt.show()
+        plt.savefig(WD+dirname+filename+".png")
+
+    def read_gyrate_gmx(self, path):
+        # path = "/Users/erik/Desktop/Pareto/reverse/4th/"
+        # filename = "gyrate.xvg"
+        frame = 0
+        gyrate = []
+        with open(path) as f:
+            for j in f.readlines():
+                record = j.strip()
+                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    break
+                if record[0] not in ["#", "@"]:
+                    li = record.split()
+                    gyrate.append(float(li[1]) * 10)  # Å
+                    frame += 1
+        return gyrate
 
 # print(sys.argv[1])
-
-lc = Lacomplex()
-
-# lc.rmsd_plot_gmx()
-# lc.repidx()  # 一个通道经历的所有温度
-# lc.crdidx()  # 一个温度经历的所有通道
-# lc.rmsd_plot_amber()
-# lc.Kdist_plot()
-# lc.readHeavyAtom("/Users/erik/Desktop/RAF/WT_crystal.pdb")
-# lc.cnumvtime()
-# lc.gyrate_plot_gmx()
-# lc.find_lowest_ESeq()
-# lc.hbond_plot_gmx()
-# cor, name = lc.readHeavyAtom_singleChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb")
-# Phi = lc.gather_dihedral_atom_singChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb", type="Phi")
+raf = RAF()
+# raf.rmsd_plot_gmx()
+# raf.repidx()  # 一个通道经历的所有温度
+# raf.crdidx()  # 一个温度经历的所有通道
+# raf.rmsd_plot_amber()
+# raf.Kdist_plot()
+# raf.readHeavyAtom("/Users/erik/Desktop/RAF/WT_crystal.pdb")
+# raf.cnumvtime()
+# raf.gyrate_plot_gmx()
+raf.find_lowest_ESeq()
+# raf.hbond_plot_gmx()
+# cor, name = raf.readHeavyAtom_singleChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb")
+# Phi = raf.gather_dihedral_atom_singChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb", type="Phi")
 # print(Phi)
-# lc.rmsd_plot_gmx_intra()
-# lc.rmsd_plot_gmx_inter()
-# lc.rmsd_plot_gmx()
-# lc.dihdis_trend()
-# lc.dih_RAF()
-# print(lc.output_aa_name("/Users/erik/Desktop/RAF/crystal_WT/test/1/md15.pdb"))
-# lc.rmsf_plot_RAF()
-# lc.plot_PCA_2d()
-# lc.plot_PCA_3d()
-lc.dih_RAF_5()
+# raf.rmsd_plot_gmx_intra()
+# raf.rmsd_plot_gmx_inter()
+# raf.rmsd_plot_gmx()
+# raf.dihdis_trend()
+# raf.dih_RAF()
+# print(raf.output_aa_name("/Users/erik/Desktop/RAF/crystal_WT/test/1/md15.pdb"))
+# raf.rmsf_plot_RAF()
+# raf.plot_PCA_2d()
+# raf.plot_PCA_3d()
+# raf.dih_RAF_5()
+# raf.E_Coulomb_SR()
+# raf.E_Tem()
+# raf.LJ_SR_5()
+# raf.construct_rmsd_matrix()
+# raf.self_rmsd()
+# raf.rmsd_heatmap()
+# raf.rmsd_plot_gmx_inter()
+# raf.read_rmsd_gmx()
