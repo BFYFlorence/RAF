@@ -12,18 +12,18 @@ from collections import defaultdict
 import seaborn as sns
 from scipy import stats
 
-np.set_printoptions(suppress=True)  # 取消科学计数显示
+np.set_printoptions(suppress=True)  # Cancel scientific counting display
 np.set_printoptions(threshold=np.inf)
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Macos需要设为true
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Macos needs to be true
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = '2'
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
-# 自定义计算acc
+# DIY acc
 """def Myaccc(y_true, y_pred):
     y_true = tf.cast(y_true, dtype=tf.int32)
     accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(y_pred, axis=1, output_type=tf.int32),
-                                               tf.argmax(y_true, axis=1, output_type=tf.int32)), tf.float32)) # 保存行数
+                                               tf.argmax(y_true, axis=1, output_type=tf.int32)), tf.float32)) # Number of rows saved
     return accuracy
 """
 
@@ -104,28 +104,28 @@ def protran(self):
 def train(self,
           # i
           ):
-    for i in range(7, 8):  # 批量训练神经网络
-        path = self.ANN + "twostates_train.npy"  # 读取训练数据
-        train_x = np.load(path, allow_pickle=True)  # 前4500是Bind，后4500是Nobind
-        test_x = np.load('./iptg_nobind.npy', allow_pickle=True)  # 读取测试数据，5000
+    for i in range(7, 8):  # Batch training of neural networks
+        path = self.ANN + "twostates_train.npy"  # Read training data
+        train_x = np.load(path, allow_pickle=True)  
+        test_x = np.load('./iptg_nobind.npy', allow_pickle=True)  # Read test data，5000
 
-        train_y = np.zeros(shape=(train_x.shape[0]))  # 设定标签，9000
+        train_y = np.zeros(shape=(train_x.shape[0]))  # Set label，9000
         train_y[:4500] = 1
         test_y = np.zeros(shape=(test_x.shape[0]))  # 5000
 
         # print(train_x.shape, test_x.shape)
-        dataset_x = np.concatenate((train_x, test_x), axis=0)  # 合并训练集和测试集，14000
+        dataset_x = np.concatenate((train_x, test_x), axis=0)  # Combine training set and test set，14000
         # print(dataset_x.shape)
 
         dataset_x = self.norm(dataset_x)
-        dataset_y = np.concatenate((train_y, test_y))  # 合并标签，14000
+        dataset_y = np.concatenate((train_y, test_y))  # Merge tags，14000
 
         # train
         dataset_x = tf.convert_to_tensor(dataset_x, dtype=tf.float32)
         dataset_y = tf.convert_to_tensor(dataset_y, dtype=tf.int32)
         dataset_y_onehot = tf.one_hot(dataset_y, depth=2, dtype=tf.int32)
 
-        model = tf.keras.Sequential([  # 加个tf.就可以正常保存了！！！另外说一句，keras比tf慢了不止一点
+        model = tf.keras.Sequential([  
             layers.Dense(256, activation=tf.nn.tanh),
             layers.Dense(128, activation=tf.nn.tanh),
             layers.Dense(64, activation=tf.nn.tanh),
@@ -142,7 +142,7 @@ def train(self,
                       metrics=[
                           Myacc()
                       ])
-        models_path = './models/'  # saver保存路径
+        models_path = './models/'  # 
         logs_dir = './logs/{0}/'.format(i)
         logs_train_dir = os.path.join(logs_dir, "train")
         logs_valid_dir = os.path.join(logs_dir, "valid")
@@ -177,7 +177,7 @@ def testmodels(self):
     data_x = tf.convert_to_tensor(data_x, dtype=tf.float32)
 
     # label = np.zeros(shape=(data_x.shape[0]))
-    # label = tf.convert_to_tensor(label, dtype=tf.int32)  # 必须是int64用于计算accuracy
+    # label = tf.convert_to_tensor(label, dtype=tf.int32)  # 
     out1 = model1(data_x)
     # print(out)
     # out2 = model2(data_x)
@@ -190,27 +190,27 @@ def testmodels(self):
 
 class RAF:
     def __init__(self):
-        self.contact_dis = 4.5  # 重原子之间的contact距离
-        self.startFrame = 1  # 首帧
-        self.endFrame = 5000 + 1  # 末帧
-        self.set_name = 7  # 字典存储名称, 用于set和freq的存储
+        self.contact_dis = 4.5  # contact distance between heavy atoms
+        self.startFrame = 1  # first frame
+        self.endFrame = 5000 + 1  # last frame
+        # self.set_name = 7
         self.aa = ["GLY", "ALA", "VAL", "LEU", "ILE", "PHE", "TRP", "TYR", "ASP", "ASN",
                    "GLU", "LYS", "GLN", "MET", "SER", "THR", "CYS", "PRO", "HIS", "ARG",
                    "HID", "ASN", "ASH", "HIE", "HIP"]
 
         self.data_name = ""
-        self.csv_path = ""  # 表格读取路径
-        self.frame_path = ""  # 存储每一帧的文件夹
+        # self.csv_path = ""
+        # self.frame_path = ""
         self.ANN = ""
-        self.output = ""  # 分析数据输出文件夹
+        # self.output = ""
 
-        self.startSet = 1  # 字典起始
-        self.endSet = 10 + 1  # 字典终止
+        # self.startSet = 1
+        # self.endSet = 10 + 1
 
-        self.Interval = 1  # 取帧间隔,看帧的名称
+        self.Interval = 1  # frame interval
 
-        self.frame_name = "md{0}.pdb"  # 每一帧的名称
-        self.csv_name = "{0}.csv"  # 每一张表的名称
+        self.frame_name = "md{0}.pdb"  # name of every frame
+        self.csv_name = "{0}.csv"  # name of every csv
 
         self.vmd_rmsd_path = "/Users/erik/Desktop/MD_WWN/test_100ns/"
         self.RAF_backbone_mass = [14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01]
@@ -243,15 +243,15 @@ class RAF:
 
         self.hydrophilic_index = [36]
 
-    def processIon(self, aa):  # 处理质子化条件
+    def processIon(self, aa):  # Dealing with protonation conditions
         if aa in ['ASH']:
             return 'ASP'
         if aa in ['HIE', 'HID', 'HIP']:
             return 'HIS'
         return aa
 
-    def norm(self, data):  # 最好应该是方差归一化
-        # min-max标准化
+    def norm(self, data):  # best to normalize the variance
+        # min-max
         min_val = np.min(data)
         max_val = np.max(data)
         for i in range(data.shape[0]):
@@ -278,7 +278,7 @@ class RAF:
         return y
 
     def readHeavyAtom_singleChain(self, path) -> np.array:
-        # 读取每条链重原子的坐标，必须要有chainID的信息
+        # To read the coordinates of the heavy atoms of each chain, the chainID information is required
         """[[-21.368 108.599   3.145]
             [-19.74  109.906   6.386]
             [-19.151 113.618   6.922]
@@ -297,12 +297,12 @@ class RAF:
             for i in f.readlines():
                 record = i.strip()
                 atom = record[:4].strip()
-                if atom != "ATOM":  # 检测ATOM起始行
+                if atom != "ATOM":  # Detect ATOM start line
                     continue
                 # print(record)
                 serial = record[6:11].strip()  # 697
                 atname = record[12:16].strip()  # CA
-                resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
+                resName = self.processIon(record[17:20].strip())  # PRO, Treated protonation conditions
                 if resName not in self.aa:
                     continue
                 resSeq = record[22:26].strip()  # 3
@@ -320,7 +320,7 @@ class RAF:
             return np.array(atom_cor), atom_nam
 
     def euclidean(self, a_matrix, b_matrix):
-        # 采用矩阵运算实现欧氏距离的计算
+        # Using matrix operation to calculate Euclidean distance
         """                     b
            [[2.23606798  1.          5.47722558]
         a   [7.07106781  4.69041576  3.        ]
@@ -333,7 +333,7 @@ class RAF:
 
         return dist
 
-    def dihedral(self, p1, p2, p3, p4):  # 计算单一二面角
+    def dihedral(self, p1, p2, p3, p4):  # Calculate a single dihedral angle
         p12 = p2 - p1
         p13 = p3 - p1
         p42 = p2 - p4
@@ -354,7 +354,7 @@ class RAF:
         for i in atom_nam:
             if i.split("-")[2] in atoms:
                 if atoms[n % 3] != i.split("-")[2]:
-                    raise Exception("二面角原子顺序错误")
+                    raise Exception("The order of dihedral atoms is wrong")
                 n += 1
 
     def PCA_dis(self):
@@ -366,7 +366,7 @@ class RAF:
         print(bind.shape)
         # print(bind.shape)
         # print(nobind.shape)
-        meanVal = np.mean(bind, axis=0)  # 按列求均值，即求各个特征的均值
+        meanVal = np.mean(bind, axis=0)  # Find the mean value by column, that is, find the mean value of each feature
         newData = bind - meanVal
         # print(meanVal.shape)
         covMat = np.cov(newData, rowvar=False)
@@ -375,14 +375,14 @@ class RAF:
 
         print(eigVals)
 
-        eigValIndice = np.argsort(eigVals)  # 对特征值从小到大排序,返回值为索引
+        eigValIndice = np.argsort(eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
         # print(eigValIndice)
 
-        n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # 最大的n个特征值的下标
-        n_eigVect = eigVects[:, n_eigValIndice]  # 最大的n个特征值对应的特征向量
-        lowDDataMat = newData * n_eigVect  # 低维特征空间的数据
+        n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # The subscript of the largest n eigenvalues
+        n_eigVect = eigVects[:, n_eigValIndice]  # The eigenvectors corresponding to the largest n eigenvalues
+        lowDDataMat = newData * n_eigVect  # Low-dimensional feature space data
         # print(lowDDataMat.shape)
-        reconMat = (lowDDataMat * n_eigVect.T) + meanVal  # 重构数据
+        reconMat = (lowDDataMat * n_eigVect.T) + meanVal  # Restructure the data
         # print(reconMat)
         # print(covMat)
 
@@ -399,15 +399,15 @@ class RAF:
         # 数据组织形式：(result_A_phi_bind, result_A_psi_bind, result_B_phi_bind, result_B_psi_bind)
         nobind = np.hstack((result_A_phi_nobind, result_A_psi_nobind, result_B_phi_nobind, result_B_psi_nobind))
 
-        meanVal = np.mean(nobind, axis=0)  # 按列求均值，即求各个特征的均值
+        meanVal = np.mean(nobind, axis=0)  # Find the mean value by column, that is, find the mean value of each feature
         newData = nobind - meanVal
 
         covMat = np.cov(newData, rowvar=False)
         eigVals, eigVects = np.linalg.eig(np.mat(covMat))
 
-        eigValIndice = np.argsort(eigVals)  # 对特征值从小到大排序,返回值为索引
-        n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # 最大的n个特征值的下标
-        n_eigVect = eigVects[:, n_eigValIndice]  # 最大的n个特征值对应的特征向量
+        eigValIndice = np.argsort(eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
+        n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # The subscript of the largest n eigenvalues
+        n_eigVect = eigVects[:, n_eigValIndice]  # The eigenvectors corresponding to the largest n eigenvalues
 
         first_vect = np.abs(n_eigVect[:,0])
         first_val = eigVals[n_eigValIndice][0]
@@ -421,7 +421,7 @@ class RAF:
         with open(path+filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -437,7 +437,7 @@ class RAF:
         plt.show()
         # np.save(path+"rmsd.npy", np.array(rms))
 
-    def gyrate_plot_gmx(self):  # 单位为Å
+    def gyrate_plot_gmx(self):  # unit is Å
         # crystal_WT
         # dRafX6
         num = 5
@@ -469,7 +469,7 @@ class RAF:
         # plt.legend()
         # plt.show()
 
-    def rmsf_plot(self):  # 单位为Å
+    def rmsf_plot(self):  # unit is Å
         file_name = 'rmsf_CA'
         target_file = "/Users/erik/Desktop/RAF/crystal_WT/test/1/" + file_name + ".xvg"
         x = [[], []]
@@ -478,7 +478,7 @@ class RAF:
         with open(target_file) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -515,7 +515,7 @@ class RAF:
 
         plt.show()
 
-    def rmsf_plot_RAF(self):  # 单位为Å
+    def rmsf_plot_RAF(self):  # unit is Å
         file_name = 'rmsf_CA'
         num = 5
         result_crystal_WT = []
@@ -531,7 +531,7 @@ class RAF:
             with open(target_file) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -545,7 +545,7 @@ class RAF:
             with open(target_file) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -580,7 +580,7 @@ class RAF:
 
         plt.show()
 
-    def sasa_sf(self, path):  # 计算单一溶液可及性面积
+    def sasa_sf(self, path):  # Calculate a single sasa
         result = []
         score = 110
         with open(path, 'r') as f:
@@ -629,7 +629,7 @@ class RAF:
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         for k in range(1, num + 1):
-            ax1 = fig.add_subplot(4, 4, k)  # 左上角第一个开始填充，从左到右
+            ax1 = fig.add_subplot(4, 4, k)  # Fill in the top left corner first, from left to right
             ax1.set_title('score of REMD', fontsize=2)
             ax1.set_xlabel('frames(5ps/f)', fontsize=2)
             ax1.set_ylabel("score", fontsize=2)
@@ -693,12 +693,12 @@ class RAF:
                 atom = record[:4].strip()
                 if atom == "TEM":
                     break
-                if atom != "ATOM":  # 检测ATOM起始行
+                if atom != "ATOM":  # Detect ATOM start line
                     continue
 
-                resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
+                resName = self.processIon(record[17:20].strip())  # PRO, Treated protonation conditions
                 resSeq = int(record[22:26].strip())
-                if resSeq == 1 and current_aa != resName:     # 1或62，取决于是我的体系还是小红师姐的体系
+                if resSeq == 1 and current_aa != resName:     # 1 or 62，It depends on my system or Sister Xiaohong’s system
                     n += 1
                 record = record[:21] + chain_ID[n] + record[22:]
                 current_aa = resName
@@ -712,7 +712,7 @@ class RAF:
         with open(path) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -771,7 +771,7 @@ class RAF:
         with open(path + filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -797,7 +797,7 @@ class RAF:
         with open("temperatures.dat", 'a') as f:
             for i in range(replicas):
                 T.append(start*np.exp(k*i))
-                f.write("%.1f" % float(start*np.exp(k*i)))  # 保留一位小数, 并且保证温度指数间隔
+                f.write("%.1f" % float(start*np.exp(k*i)))  # Keep one decimal place, and ensure the temperature exponential interval
                 f.write("\n")
 
         f.close()
@@ -893,7 +893,7 @@ class RAF:
 
         plt.show()"""
 
-    def crdidx(self):  # 一个温度经历的所有通道
+    def crdidx(self):  # All channels experienced by a temperature
         start = 1
         end = 1
 
@@ -914,7 +914,7 @@ class RAF:
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         for k in range(1, num + 1):
-            ax1 = fig.add_subplot(3, 3, k)  # 左上角第一个开始填充，从左到右
+            ax1 = fig.add_subplot(3, 3, k)
             ax1.set_title('time series of replica exchange', fontsize=2)
             ax1.set_xlabel('time(ps)', fontsize=2)
             ax1.set_ylabel("Replica", fontsize=2)
@@ -922,7 +922,7 @@ class RAF:
 
         plt.show()
 
-    def repidx(self):  # 一个通道经历的所有温度
+    def repidx(self):  # All temperatures experienced by a channel
         start = 1
         end = 1
 
@@ -944,7 +944,7 @@ class RAF:
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         for k in range(1, num + 1):
-            ax1 = fig.add_subplot(3, 3, k)  # 左上角第一个开始填充，从左到右
+            ax1 = fig.add_subplot(3, 3, k)
             ax1.set_title('time series of replica exchange', fontsize=2)
             ax1.set_xlabel('time(ps)', fontsize=2)
             ax1.set_ylabel("Replica", fontsize=2)
@@ -954,7 +954,7 @@ class RAF:
 
     def REMD_average(self):
         series = np.load("./REMD_16_SASA.npy", allow_pickle=True).item()
-        score = series["2"]  # 选取第二个副本
+        score = series["2"]  # Select the second copy
         score_ave = []
 
         for i in range(1, 21):
@@ -1029,7 +1029,7 @@ class RAF:
         end = 6
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)  # 左上角第一个开始填充，从左到右
+        ax1 = fig.add_subplot(1, 1, 1)
         for k in range(start, end + 1):
             path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/"
 
@@ -1038,7 +1038,7 @@ class RAF:
             with open(path + filename.format(k)) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -1055,13 +1055,13 @@ class RAF:
 
     def cnumvtime(self):
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        ax1 = fig.add_subplot(1, 1, 1)  # 左上角第一个开始填充，从左到右
+        ax1 = fig.add_subplot(1, 1, 1)
         path = "/Users/erik/Desktop/MD_WWN/REMD/new_topo/repre_310.0K/cnumvtime.dat"
         cnum = []
         with open(path) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1082,7 +1082,7 @@ class RAF:
                 E.append(float(record[-2]))
 
         E = np.array(E)
-        print(np.argsort(E))  # 升序
+        print(np.argsort(E))  # Ascending
         print(E[0])
         print(E[99])
 
@@ -1117,7 +1117,7 @@ class RAF:
                     with open(pathgroup1) as file:
                         for j in file.readlines():
                             record = j.strip()
-                            if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                            if len(record) == 0:
                                 break
                             if record[0] not in ["#", "@"]:
                                 li = record.split()
@@ -1127,7 +1127,7 @@ class RAF:
                     with open(pathgroup2) as file:
                         for j in file.readlines():
                             record = j.strip()
-                            if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                            if len(record) == 0:
                                 break
                             if record[0] not in ["#", "@"]:
                                 li = record.split()
@@ -1158,7 +1158,7 @@ class RAF:
         self.dihedral_atom_order(atom_nam)
 
         for k in range(len(atom_nam)):
-            if atom_nam[k].split("-")[2] in atoms:  # 把组成二面角原子的坐标加入
+            if atom_nam[k].split("-")[2] in atoms:  # Add the coordinates of the atoms that make up the dihedral angle
                 ang_atom_cor.append(atom_cor[k])
 
         if type == "Phi":
@@ -1178,7 +1178,7 @@ class RAF:
 
         return result
 
-    def rmsd_plot_gmx_inter(self):  # 单位为Å
+    def rmsd_plot_gmx_inter(self):  # unit is Å
         # crystal_WT
         # dRafX6
         num = 2
@@ -1213,7 +1213,7 @@ class RAF:
         # plt.legend()
         # plt.show()
 
-    def rmsd_plot_gmx_intra(self):  # 单位为Å
+    def rmsd_plot_gmx_intra(self):  # unit is Å
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         target = 1  # the serial of simulation
@@ -1232,7 +1232,7 @@ class RAF:
         with open(path_1+filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1246,7 +1246,7 @@ class RAF:
         with open(path_2 + filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1269,7 +1269,7 @@ class RAF:
         target = "psi"
         temperature = "test"
 
-        # 残基序号
+        # Residue number
         Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
         Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
         WT_seq =        ['THR', 'SER', 'ASN', 'THR', 'ILE', 'ARG', 'VAL', 'PHE', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN', 'ARG', 'THR', 'VAL', 'VAL', 'ASN', 'VAL', 'ARG', 'ASN', 'GLY', 'MET', 'SER', 'LEU', 'HIS', 'ASP', 'CYS', 'LEU', 'MET', 'LYS', 'ALA', 'LEU', 'LYS', 'VAL', 'ARG', 'GLY', 'LEU', 'GLN', 'PRO', 'GLU', 'CYS', 'CYS', 'ALA', 'VAL', 'PHE', 'ARG', 'LEU', 'LEU', 'HIS', 'GLU', 'HIS', 'LYS', 'GLY', 'LYS', 'LYS', 'ALA', 'ARG', 'LEU', 'ASP', 'TRP', 'ASN', 'THR', 'ASP', 'ALA', 'ALA', 'SER', 'LEU', 'ILE', 'GLY', 'GLU', 'GLU', 'LEU', 'GLN', 'VAL', 'ASP', 'PHE', 'LEU']
@@ -1343,10 +1343,6 @@ class RAF:
         ax1.set_xlabel('residues', fontsize=20)
         ax1.set_ylabel("Dihedral", fontsize=20)
         ax1.hist(temp_WT, bins=100)"""
-
-
-
-
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
@@ -1481,7 +1477,7 @@ class RAF:
         plt.show()
 
     def output_aa_name(self, path):
-        # 读取氨基酸序列
+        # Read amino acid sequence
         print("Reading sequence:", path)
         aa_nam = []
         cur_resSeq = 0
@@ -1489,9 +1485,9 @@ class RAF:
             for i in f.readlines():
                 record = i.strip()
                 atom = record[:4].strip()
-                if atom != "ATOM":  # 检测ATOM起始行
+                if atom != "ATOM":
                     continue
-                resName = self.processIon(record[17:20].strip())  # PRO, 已处理过质子化条件
+                resName = self.processIon(record[17:20].strip())  # PRO
                 resSeq = int(record[22:26].strip())  # 3
                 if resName not in self.aa:
                     continue
@@ -1508,7 +1504,7 @@ class RAF:
         with open(path) as file:
             for j in file.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1557,7 +1553,7 @@ class RAF:
         for dir_name in paths:
             if not os.path.exists(dir_name):
                 os.mkdir(dir_name)
-        # 残基序号
+        # Residue number
         Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
         Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
         WT_seq = ['THR', 'SER', 'ASN', 'THR', 'ILE', 'ARG', 'VAL', 'PHE', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN', 'ARG',
@@ -1573,7 +1569,7 @@ class RAF:
                          'PRO', 'ASN', 'LYS', 'VAL', 'GLN', 'VAL', 'TYR', 'LEU', 'LEU', 'LEU', 'SER', 'GLY', 'ASP',
                          'ASP', 'GLY', 'ALA', 'GLU', 'GLN', 'PRO', 'LEU', 'SER', 'LEU', 'ASN', 'HIS', 'PRO', 'ALA',
                          'GLU', 'ARG', 'LEU', 'ILE', 'GLY', 'LYS', 'LYS', 'LEU', 'LYS', 'VAL', 'VAL', 'PRO', 'LEU']
-        for p in range(len(WT_seq)):  # 氨基酸位点
+        for p in range(len(WT_seq)):  # Amino acid site
             fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
             for k in range(1, serial + 1):
                 crystal_WT_phi = []
@@ -1762,7 +1758,7 @@ class RAF:
         ax1.set_xlabel(filename, fontsize=20)
         # ax1.set_ylabel("Projection_2", fontsize=20)
         im = ax1.imshow(data, cmap=plt.cm.hot_r)
-        # 增加右侧的颜色刻度条
+        # add the color scale bar on the right
         plt.colorbar(im)
         # plt.show()
         plt.savefig(WD+dirname+filename+".png")
@@ -1775,7 +1771,7 @@ class RAF:
         with open(path) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # 遇见空行，表示迭代至文件末尾，跳出循环
+                if len(record) == 0:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1786,8 +1782,8 @@ class RAF:
 # print(sys.argv[1])
 raf = RAF()
 # raf.rmsd_plot_gmx()
-# raf.repidx()  # 一个通道经历的所有温度
-# raf.crdidx()  # 一个温度经历的所有通道
+# raf.repidx()  # All temperatures experienced by a channel
+# raf.crdidx()  # All channels experienced by a temperature
 # raf.rmsd_plot_amber()
 # raf.Kdist_plot()
 # raf.readHeavyAtom("/Users/erik/Desktop/RAF/WT_crystal.pdb")
