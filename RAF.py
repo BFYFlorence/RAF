@@ -10,7 +10,8 @@ from collections import defaultdict
 # __main__.pymol_argv = ['pymol', '-qc']
 # import pymol as pm
 import seaborn as sns
-from scipy import stats
+
+# from scipy import stats
 
 np.set_printoptions(suppress=True)  # Cancel scientific counting display
 np.set_printoptions(threshold=np.inf)
@@ -188,6 +189,7 @@ def testmodels(self):
     print(pro1)
     print(np.where(pro1==np.min(pro1)))"""
 
+
 class RAF:
     def __init__(self):
         self.contact_dis = 4.5  # contact distance between heavy atoms
@@ -213,7 +215,26 @@ class RAF:
         self.csv_name = "{0}.csv"  # name of every csv
 
         self.vmd_rmsd_path = "/Users/erik/Desktop/MD_WWN/test_100ns/"
-        self.RAF_backbone_mass = [14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01]
+        self.RAF_backbone_mass = [14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01, 14.01, 12.01, 12.01,
+                                  14.01, 12.01, 12.01, 14.01, 12.01, 12.01]
         self.sasa_max = {"GLY": 87.6,
                          "ALA": 111.9,
                          "VAL": 154.4,
@@ -234,7 +255,7 @@ class RAF:
                          "PRO": 148.898,  # No hydrogen bonds found, so this figure is calculated by pymol
                          "HIS": 188.5,
                          "ARG": 249.0
-                        }  # Angstroms^2, using 5-aa stride
+                         }  # Angstroms^2, using 5-aa stride
 
         # self.hydrophobic_index = [[16, 20, 34, 38, 50, 53], [15, 16, 18, 20]]
         # self.hydrophobic_index = [[16, 20, 34, 38, 50, 53], [82, 83, 85, 87]]
@@ -242,6 +263,8 @@ class RAF:
         self.either_index = [37, 41, 45]
 
         self.hydrophilic_index = [36]
+        self.stride = {"C": "Coil", "T": "Turn", "B": "Bridge", "b": "Bridge", "E": "Strand", "I": "PI_helix",
+                       "G": "310Helix", "H": "AlphaHelix"}
 
     def processIon(self, aa):  # Dealing with protonation conditions
         if aa in ['ASH']:
@@ -263,7 +286,7 @@ class RAF:
         y = []
         for i in li:
             t = np.random.uniform(low=0, high=1)
-            if t < 1.0/fold:
+            if t < 1.0 / fold:
                 y.append(i)
         return y
 
@@ -345,7 +368,7 @@ class RAF:
         else:
             signature = 1
 
-        result = (np.arccos(np.dot(nv1, nv2)/(np.linalg.norm(nv1)*np.linalg.norm(nv2)))/np.pi)*180*signature
+        result = (np.arccos(np.dot(nv1, nv2) / (np.linalg.norm(nv1) * np.linalg.norm(nv2))) / np.pi) * 180 * signature
         return result
 
     def dihedral_atom_order(self, atom_nam):
@@ -375,7 +398,8 @@ class RAF:
 
         print(eigVals)
 
-        eigValIndice = np.argsort(eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
+        eigValIndice = np.argsort(
+            eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
         # print(eigValIndice)
 
         n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # The subscript of the largest n eigenvalues
@@ -405,11 +429,12 @@ class RAF:
         covMat = np.cov(newData, rowvar=False)
         eigVals, eigVects = np.linalg.eig(np.mat(covMat))
 
-        eigValIndice = np.argsort(eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
+        eigValIndice = np.argsort(
+            eigVals)  # Sort the eigenvalues from small to large, and the return value is the index
         n_eigValIndice = eigValIndice[-1:-(30 + 1):-1]  # The subscript of the largest n eigenvalues
         n_eigVect = eigVects[:, n_eigValIndice]  # The eigenvectors corresponding to the largest n eigenvalues
 
-        first_vect = np.abs(n_eigVect[:,0])
+        first_vect = np.abs(n_eigVect[:, 0])
         first_val = eigVals[n_eigValIndice][0]
         print(np.where(first_vect > 0.07)[0] % 267)
 
@@ -418,14 +443,15 @@ class RAF:
         filename = "rmsd.xvg"
         frame = 0
         rms = []
-        with open(path+filename) as f:
+        with open(path + filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                if len(
+                        record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
-                    rms.append(float(li[1])*10)  # Å
+                    rms.append(float(li[1]) * 10)  # Å
                     frame += 1
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
@@ -478,7 +504,8 @@ class RAF:
         with open(target_file) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                if len(
+                        record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -486,7 +513,7 @@ class RAF:
                     if id == 1:
                         chain_id += 1
                     x[chain_id].append(int(id))  # -55
-                    y[chain_id].append(float(li[1])*10)
+                    y[chain_id].append(float(li[1]) * 10)
 
         # np.save(self.vmd_rmsd_path + file_name + ".npy", np.array(y))
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
@@ -501,7 +528,6 @@ class RAF:
         ax1.plot(x[1], y[1])  # NuMA
         print(x[0], x[1])
         print(y[0], y[1])
-
 
         # hydrophobic_index
         # ax1.scatter(self.hydrophobic_index[0], [y[0][i - 1] for i in self.hydrophobic_index[0]], color="black")
@@ -522,16 +548,17 @@ class RAF:
         result_cry_repacking = []
         temperature = "384K"
 
-        Strand = [[4,5,6,7,8], [15,16,17,18], [43,44,45,46,47], [72,73,74,75,76,77]]
-        Alphahelix = [[25,26,27,28,29,30,31,32,33,34,35,36], [65,66,67,68]]
+        Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
+        Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
 
-        for i in range(2, num+1):
+        for i in range(2, num + 1):
             rmsf = []
             target_file = "/Users/erik/Desktop/RAF/crystal_WT/{1}/{0}/".format(i, temperature) + file_name + ".xvg"
             with open(target_file) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                    if len(
+                            record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -539,13 +566,14 @@ class RAF:
             f.close()
             result_crystal_WT.append(rmsf)
 
-        for k in range(1, num+1):
+        for k in range(1, num + 1):
             rmsf = []
             target_file = "/Users/erik/Desktop/RAF/cry_repacking/{1}/{0}/".format(k, temperature) + file_name + ".xvg"
             with open(target_file) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                    if len(
+                            record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -565,18 +593,18 @@ class RAF:
         ax1.set_xlabel('residue_CA', fontsize=20)
         ax1.set_ylabel("RMSF(Å)", fontsize=20)
 
-        ax1.plot(range(1, len(result_crystal_WT)+1), result_crystal_WT, color="blue")
-        ax1.scatter(range(1, len(result_crystal_WT)+1), result_crystal_WT, s=20, color="blue", marker="o")
+        ax1.plot(range(1, len(result_crystal_WT) + 1), result_crystal_WT, color="blue")
+        ax1.scatter(range(1, len(result_crystal_WT) + 1), result_crystal_WT, s=20, color="blue", marker="o")
 
         ax1.plot(range(1, len(result_cry_repacking) + 1), result_cry_repacking, color="red")
         ax1.scatter(range(1, len(result_cry_repacking) + 1), result_cry_repacking, s=20, color="red", marker="^")
 
         # strand
         for strand in Strand:
-            ax1.plot(strand, [0]*len(strand), color="black")
+            ax1.plot(strand, [0] * len(strand), color="black")
         # alpha
         for alpha in Alphahelix:
-            ax1.plot(alpha, [0]*len(alpha), color="black")
+            ax1.plot(alpha, [0] * len(alpha), color="black")
 
         plt.show()
 
@@ -640,12 +668,12 @@ class RAF:
         return np.array(series)
 
     def relative_SASA(self, aa_name, SASA):
-        return SASA/self.sasa_max[self.processIon(aa_name)]
+        return SASA / self.sasa_max[self.processIon(aa_name)]
 
     def sasa_cluster(self):
         result = []
         num = 15
-        for i in range(1, num+1):
+        for i in range(1, num + 1):
             result.append(self.sasa_sf("/Users/erik/Desktop/MD_WWN/SASA/sasa_cluster_{0}.pdb".format(i)))
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
@@ -653,7 +681,7 @@ class RAF:
         ax1.set_title('clusters in paper', fontsize=20)
         ax1.set_xlabel('cluster_serial', fontsize=20)
         ax1.set_ylabel("score", fontsize=20)
-        ax1.scatter([i for i in range(1, num+1)], result)  # ###############!!!!!!!
+        ax1.scatter([i for i in range(1, num + 1)], result)  # ###############!!!!!!!
 
         # plt.savefig('sasa.png')
         plt.show()
@@ -679,7 +707,7 @@ class RAF:
                 record = i.strip()
                 if record[0] not in ["#", "@"]:
                     record = record.split()
-                    rmsd = float(record[-1])*10.  # Å
+                    rmsd = float(record[-1]) * 10.  # Å
         file.close()
         return rmsd
 
@@ -698,7 +726,7 @@ class RAF:
 
                 resName = self.processIon(record[17:20].strip())  # PRO, Treated protonation conditions
                 resSeq = int(record[22:26].strip())
-                if resSeq == 1 and current_aa != resName:     # 1 or 62，It depends on my system or Sister Xiaohong’s system
+                if resSeq == 1 and current_aa != resName:  # 1 or 62，It depends on my system or Sister Xiaohong’s system
                     n += 1
                 record = record[:21] + chain_ID[n] + record[22:]
                 current_aa = resName
@@ -712,7 +740,8 @@ class RAF:
         with open(path) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                if len(
+                        record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -752,7 +781,8 @@ class RAF:
 
         # hydrophobic_index
         ax1.scatter(self.hydrophobic_index[0], [AtomicFlx[0][i - 1] for i in self.hydrophobic_index[0]], color="black")
-        ax1.scatter(self.hydrophobic_index[1], [AtomicFlx[1][i - 1 - 67] for i in self.hydrophobic_index[1]], color="black")
+        ax1.scatter(self.hydrophobic_index[1], [AtomicFlx[1][i - 1 - 67] for i in self.hydrophobic_index[1]],
+                    color="black")
 
         # hydrophilic_index
         ax1.scatter(self.hydrophilic_index[0], AtomicFlx[0][self.hydrophilic_index[0] - 1], color="red")
@@ -771,7 +801,8 @@ class RAF:
         with open(path + filename) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                if len(
+                        record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -791,13 +822,14 @@ class RAF:
             os.system("rm temperatures.dat")
         T = []
 
-        k = np.log(np.power(end/start, 1/7))
+        k = np.log(np.power(end / start, 1 / 7))
         print(k)
 
         with open("temperatures.dat", 'a') as f:
             for i in range(replicas):
-                T.append(start*np.exp(k*i))
-                f.write("%.1f" % float(start*np.exp(k*i)))  # Keep one decimal place, and ensure the temperature exponential interval
+                T.append(start * np.exp(k * i))
+                f.write("%.1f" % float(
+                    start * np.exp(k * i)))  # Keep one decimal place, and ensure the temperature exponential interval
                 f.write("\n")
 
         f.close()
@@ -831,7 +863,7 @@ class RAF:
         ax1.set_xlabel('Resid', fontsize=20)
         ax1.set_ylabel("relative_SASA", fontsize=20)
 
-        ax1.errorbar([i+1 for i in range(data.shape[1])], data_mean, yerr=data_var, fmt="o")
+        ax1.errorbar([i + 1 for i in range(data.shape[1])], data_mean, yerr=data_var, fmt="o")
 
         ax1.errorbar(self.hydrophobic_index, hydropho_mean, yerr=hydropho_var, fmt="o", color="black")
         ax1.errorbar(self.hydrophilic_index, hydrophi_mean, yerr=hydrophi_var, fmt="o", color="red")
@@ -856,7 +888,7 @@ class RAF:
             else:
                 b += 1
 
-        print(a,b,c)
+        print(a, b, c)
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('SASA', fontsize=20)
@@ -948,7 +980,7 @@ class RAF:
             ax1.set_title('time series of replica exchange', fontsize=2)
             ax1.set_xlabel('time(ps)', fontsize=2)
             ax1.set_ylabel("Replica", fontsize=2)
-            ax1.scatter(range(1, exchanges+1), series[str(k)], s=.1)
+            ax1.scatter(range(1, exchanges + 1), series[str(k)], s=.1)
 
         plt.show()
 
@@ -959,9 +991,9 @@ class RAF:
 
         for i in range(1, 21):
             sum = 0
-            for j in range(100*(i-1), 100*i):
+            for j in range(100 * (i - 1), 100 * i):
                 sum += score[j]
-            score_ave.append(sum/100)
+            score_ave.append(sum / 100)
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
@@ -989,7 +1021,7 @@ class RAF:
                         if name == 'N':
                             start += 1
                     else:
-                        current_chain  =chain_ID
+                        current_chain = chain_ID
                         start = 61
                         if name == 'N':
                             start += 1
@@ -997,7 +1029,7 @@ class RAF:
                     recover_pdb.append(record)
         file.close()
 
-        write_pdb = pdb_path.format(str(serial)+"_recover")
+        write_pdb = pdb_path.format(str(serial) + "_recover")
         # print(write_pdb)
 
         with open(write_pdb, 'a') as f:
@@ -1005,15 +1037,15 @@ class RAF:
                 f.write(k)
         f.close()
 
-    def cal_COM(self, cors:np.array, mass:list):
+    def cal_COM(self, cors: np.array, mass: list):
         assert len(cors) == len(mass)
         M = np.sum(mass)
         add_mass = []
         for i in range(len(mass)):
-            add_mass.append(cors[i]*mass[i])
+            add_mass.append(cors[i] * mass[i])
 
         add_mass = np.sum(np.array(add_mass), axis=0)
-        print(add_mass/M)
+        print(add_mass / M)
 
     def output_COM_restraint(self):
         atoms = ["N", "CA", "C"]
@@ -1021,8 +1053,8 @@ class RAF:
         len_total = 74
         # for i in range(len_chain_A+1, len_total+1):
         #     print(i,",", i,",", i,",",end="", sep="")
-        for i in range(1, (len_total-len_chain_A)*3+1):
-            print("grnam2({0})='{1}'".format(i, atoms[(i-1)%3]),",", sep="", end="")
+        for i in range(1, (len_total - len_chain_A) * 3 + 1):
+            print("grnam2({0})='{1}'".format(i, atoms[(i - 1) % 3]), ",", sep="", end="")
 
     def Kdist_plot(self):
         start = 1
@@ -1038,7 +1070,8 @@ class RAF:
             with open(path + filename.format(k)) as f:
                 for j in f.readlines():
                     record = j.strip()
-                    if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                    if len(
+                            record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                         break
                     if record[0] not in ["#", "@"]:
                         li = record.split()
@@ -1061,7 +1094,8 @@ class RAF:
         with open(path) as f:
             for j in f.readlines():
                 record = j.strip()
-                if len(record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                if len(
+                        record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
@@ -1087,11 +1121,11 @@ class RAF:
         print(E[99])
 
     def hbond_plot_gmx(self):
-        num = 5
+        num = 1
         WD = "/Users/erik/Desktop/RAF"
-        group1 = "crystal_WT"
-        group2 = "dRafX6"
-        temperatures = ["300K", "344K", "384K"]
+        group1 = "cry_repacking_4g0n"
+        group2 = "cry_dRafX6"
+        temperatures = ["344K"]
         filenames = ["hbond_SS", "hbond_SM", "hbond_SW", "hbond_MW"]
 
         paths = ["/".join((WD, "HBOND")),
@@ -1105,7 +1139,7 @@ class RAF:
             for filename in range(len(filenames)):
                 hbondgroup1 = []
                 hbondgroup2 = []
-                for k in range(1, num+1):
+                for k in range(1, num + 1):
                     pathgroup1 = "/".join((WD, group1, temperature, str(k)))
                     pathgroup2 = "/".join((WD, group2, temperature, str(k)))
 
@@ -1141,10 +1175,12 @@ class RAF:
                 ax1.set_title(filenames[filename], fontsize=20)
                 ax1.set_xlabel('hbond_num', fontsize=2)
                 ax1.set_ylabel("freq", fontsize=2)"""
-                sns.kdeplot(np.array(hbondgroup1), shade=True, color="blue", bw_method=.3, ax=ax_arr[filename//2][filename%2]).set_title(filenames[filename])
-                sns.kdeplot(np.array(hbondgroup2), shade=True, color="red", bw_method=.3, ax=ax_arr[filename//2][filename%2])
+                sns.kdeplot(np.array(hbondgroup1), shade=True, color="blue", bw_method=.3,
+                            ax=ax_arr[filename // 2][filename % 2]).set_title(filenames[filename])
+                sns.kdeplot(np.array(hbondgroup2), shade=True, color="red", bw_method=.3,
+                            ax=ax_arr[filename // 2][filename % 2])
             # plt.show()
-            plt.savefig("/".join((WD, "HBOND", "{0}_vs_{1}".format(group1, group2), temperature+".png")))
+            plt.savefig("/".join((WD, "HBOND", "{0}_vs_{1}".format(group1, group2), temperature + ".png")))
 
         # ax1.hist(hbond_cry_repacking, bins=100, color="green")
         # ax1.hist(hbond_crystal_WT, bins=100, color="blue")
@@ -1190,7 +1226,7 @@ class RAF:
         for temperature in temperatures:
             fig = plt.figure(num=1, figsize=(15, 8), dpi=200)
             dir_name = "/".join((WD, group, temperature, "RMSD"))
-            print(temperature+":")
+            print(temperature + ":")
             list_ave = []
             for k in range(11, 13):
                 if not os.path.exists(dir_name):
@@ -1201,15 +1237,15 @@ class RAF:
                 average_rms = np.mean(rms)
                 list_ave.append(average_rms)
                 print(average_rms, len(rms))
-                ax1 = fig.add_subplot(2, 3, k-10)
+                ax1 = fig.add_subplot(2, 3, k - 10)
                 ax1.cla()
-                ax1.set_title(group+'_'+temperature, fontsize=20)
+                ax1.set_title(group + '_' + temperature, fontsize=20)
                 ax1.set_xlabel('time(ns)', fontsize=2)
                 ax1.set_ylabel("Backbone RMSD(Å)", fontsize=10)
-                ax1.scatter(np.array(range(len(rms)))*interval, rms, s=.1)
+                ax1.scatter(np.array(range(len(rms))) * interval, rms, s=.1)
                 ax1.plot([0, 500], [average_rms, average_rms], color="red")
             print("ave:", np.mean(list_ave))
-            plt.savefig(dir_name+"/rmsd_5.png")
+            plt.savefig(dir_name + "/rmsd_5.png")
         # plt.legend()
         # plt.show()
 
@@ -1229,15 +1265,15 @@ class RAF:
         frame = 0
         rms_1 = []
         time_1 = []
-        with open(path_1+filename) as f:
+        with open(path_1 + filename) as f:
             for j in f.readlines():
                 record = j.strip()
                 if len(record) == 0:
                     break
                 if record[0] not in ["#", "@"]:
                     li = record.split()
-                    rms_1.append(float(li[1])*10)  # Å
-                    time_1.append(frame*interval)
+                    rms_1.append(float(li[1]) * 10)  # Å
+                    time_1.append(frame * interval)
                     frame += 1
 
         frame = 0
@@ -1272,22 +1308,36 @@ class RAF:
         # Residue number
         Strand = [[4, 5, 6, 7, 8], [15, 16, 17, 18], [43, 44, 45, 46, 47], [72, 73, 74, 75, 76, 77]]
         Alphahelix = [[25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36], [65, 66, 67, 68]]
-        WT_seq =        ['THR', 'SER', 'ASN', 'THR', 'ILE', 'ARG', 'VAL', 'PHE', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN', 'ARG', 'THR', 'VAL', 'VAL', 'ASN', 'VAL', 'ARG', 'ASN', 'GLY', 'MET', 'SER', 'LEU', 'HIS', 'ASP', 'CYS', 'LEU', 'MET', 'LYS', 'ALA', 'LEU', 'LYS', 'VAL', 'ARG', 'GLY', 'LEU', 'GLN', 'PRO', 'GLU', 'CYS', 'CYS', 'ALA', 'VAL', 'PHE', 'ARG', 'LEU', 'LEU', 'HIS', 'GLU', 'HIS', 'LYS', 'GLY', 'LYS', 'LYS', 'ALA', 'ARG', 'LEU', 'ASP', 'TRP', 'ASN', 'THR', 'ASP', 'ALA', 'ALA', 'SER', 'LEU', 'ILE', 'GLY', 'GLU', 'GLU', 'LEU', 'GLN', 'VAL', 'ASP', 'PHE', 'LEU']
+        WT_seq = ['THR', 'SER', 'ASN', 'THR', 'ILE', 'ARG', 'VAL', 'PHE', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN', 'ARG',
+                  'THR', 'VAL', 'VAL', 'ASN', 'VAL', 'ARG', 'ASN', 'GLY', 'MET', 'SER', 'LEU', 'HIS', 'ASP', 'CYS',
+                  'LEU', 'MET', 'LYS', 'ALA', 'LEU', 'LYS', 'VAL', 'ARG', 'GLY', 'LEU', 'GLN', 'PRO', 'GLU', 'CYS',
+                  'CYS', 'ALA', 'VAL', 'PHE', 'ARG', 'LEU', 'LEU', 'HIS', 'GLU', 'HIS', 'LYS', 'GLY', 'LYS', 'LYS',
+                  'ALA', 'ARG', 'LEU', 'ASP', 'TRP', 'ASN', 'THR', 'ASP', 'ALA', 'ALA', 'SER', 'LEU', 'ILE', 'GLY',
+                  'GLU', 'GLU', 'LEU', 'GLN', 'VAL', 'ASP', 'PHE', 'LEU']
 
-        repacking_seq = ['ALA', 'ASP', 'ARG', 'THR', 'ILE', 'GLU', 'VAL', 'GLU', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN', 'ARG', 'THR', 'VAL', 'ILE', 'ASN', 'VAL', 'ARG', 'PRO', 'GLY', 'LEU', 'THR', 'LEU', 'LYS', 'GLU', 'ALA', 'LEU', 'LYS', 'LYS', 'ALA', 'LEU', 'LYS', 'VAL', 'ARG', 'GLY', 'ILE', 'ASP', 'PRO', 'ASN', 'LYS', 'VAL', 'GLN', 'VAL', 'TYR', 'LEU', 'LEU', 'LEU', 'SER', 'GLY', 'ASP', 'ASP', 'GLY', 'ALA', 'GLU', 'GLN', 'PRO', 'LEU', 'SER', 'LEU', 'ASN', 'HIS', 'PRO', 'ALA', 'GLU', 'ARG', 'LEU', 'ILE', 'GLY', 'LYS', 'LYS', 'LEU', 'LYS', 'VAL', 'VAL', 'PRO', 'LEU']
+        repacking_seq = ['ALA', 'ASP', 'ARG', 'THR', 'ILE', 'GLU', 'VAL', 'GLU', 'LEU', 'PRO', 'ASN', 'LYS', 'GLN',
+                         'ARG', 'THR', 'VAL', 'ILE', 'ASN', 'VAL', 'ARG', 'PRO', 'GLY', 'LEU', 'THR', 'LEU', 'LYS',
+                         'GLU', 'ALA', 'LEU', 'LYS', 'LYS', 'ALA', 'LEU', 'LYS', 'VAL', 'ARG', 'GLY', 'ILE', 'ASP',
+                         'PRO', 'ASN', 'LYS', 'VAL', 'GLN', 'VAL', 'TYR', 'LEU', 'LEU', 'LEU', 'SER', 'GLY', 'ASP',
+                         'ASP', 'GLY', 'ALA', 'GLU', 'GLN', 'PRO', 'LEU', 'SER', 'LEU', 'ASN', 'HIS', 'PRO', 'ALA',
+                         'GLU', 'ARG', 'LEU', 'ILE', 'GLY', 'LYS', 'LYS', 'LEU', 'LYS', 'VAL', 'VAL', 'PRO', 'LEU']
 
-        for k in range(1, serial+1):
-            for i in range(1, num+1):
-                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/phi_{0}.npy".format(i, k, temperature), allow_pickle=True)
+        for k in range(1, serial + 1):
+            for i in range(1, num + 1):
+                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/phi_{0}.npy".format(i, k, temperature),
+                                 allow_pickle=True)
                 crystal_WT_phi += sample.tolist()
-            for i in range(1, num+1):
-                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/psi_{0}.npy".format(i, k, temperature), allow_pickle=True)
+            for i in range(1, num + 1):
+                sample = np.load("/Users/erik/Desktop/RAF/crystal_WT/{2}/{1}/psi_{0}.npy".format(i, k, temperature),
+                                 allow_pickle=True)
                 crystal_WT_psi += sample.tolist()
-            for i in range(1, num+1):
-                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/{2}/{1}/phi_{0}.npy".format(i, k, temperature), allow_pickle=True)
+            for i in range(1, num + 1):
+                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/{2}/{1}/phi_{0}.npy".format(i, k, temperature),
+                                 allow_pickle=True)
                 cry_repacking_phi += sample.tolist()
-            for i in range(1, num+1):
-                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/{2}/{1}/psi_{0}.npy".format(i, k, temperature), allow_pickle=True)
+            for i in range(1, num + 1):
+                sample = np.load("/Users/erik/Desktop/RAF/cry_repacking/{2}/{1}/psi_{0}.npy".format(i, k, temperature),
+                                 allow_pickle=True)
                 cry_repacking_psi += sample.tolist()
 
         seqlen = len(WT_seq)
@@ -1424,7 +1474,6 @@ class RAF:
                 ax1.errorbar(range(1, len(cry_repacking_phi_mean) + 1), cry_repacking_phi_mean,
                              yerr=cry_repacking_phi_std, fmt="^", color="red", elinewidth=2)
 
-
         """if target == "phi":
             for i in range(crystal_WT_phi.shape[-1]):
                 fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
@@ -1491,7 +1540,7 @@ class RAF:
                 resSeq = int(record[22:26].strip())  # 3
                 if resName not in self.aa:
                     continue
-                if resSeq!=cur_resSeq:
+                if resSeq != cur_resSeq:
                     aa_nam.append(resName)
                     cur_resSeq = resSeq
 
@@ -1527,7 +1576,7 @@ class RAF:
         with open(path, 'r') as file:
             for j in file.readlines():
                 record = j.strip().split()
-                if record[0]!="ATOM":
+                if record[0] != "ATOM":
                     continue
                 projection_1.append(float(record[5]))
                 projection_2.append(float(record[6]))
@@ -1583,9 +1632,9 @@ class RAF:
                 ax1.cla()
                 ax1.set_xlabel('residues', fontsize=5)
                 ax1.set_ylabel("Dihedral", fontsize=5)
-                ax1.hist(crystal_WT_phi[:,p], bins=100)
+                ax1.hist(crystal_WT_phi[:, p], bins=100)
             plt.savefig(
-                "/Users/erik/Desktop/RAF/{2}/{1}/dih_5/phi/{0}_phi.png".format(p+1, temperature, group))
+                "/Users/erik/Desktop/RAF/{2}/{1}/dih_5/phi/{0}_phi.png".format(p + 1, temperature, group))
 
             fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
             for k in range(1, serial + 1):
@@ -1616,11 +1665,11 @@ class RAF:
         dt = 0.02  # ns
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        for k in range(1, serial+1):
+        for k in range(1, serial + 1):
             LJ_SR = []
             with open(path.format(group, temperature, k), "r") as file:
                 for i in file.readlines():
-                    if i[0] not in ["#","@"]:
+                    if i[0] not in ["#", "@"]:
                         record = i.strip().split()
                         LJ_SR.append(float(record[-1]))
 
@@ -1631,7 +1680,7 @@ class RAF:
             ax1.cla()
             ax1.set_xlabel('time(ns)', fontsize=5)
             ax1.set_ylabel("LJ_SR", fontsize=5)
-            ax1.plot(np.array([l for l in range(len(LJ_SR))])*(dt*inter),
+            ax1.plot(np.array([l for l in range(len(LJ_SR))]) * (dt * inter),
                      LJ_SR)
         plt.show()
 
@@ -1644,11 +1693,11 @@ class RAF:
         dt = 0.02  # ns
 
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
-        for k in range(1, serial+1):
+        for k in range(1, serial + 1):
             Tem = []
             with open(path.format(group, temperature, k), "r") as file:
                 for i in file.readlines():
-                    if i[0] not in ["#","@"]:
+                    if i[0] not in ["#", "@"]:
                         record = i.strip().split()
                         Tem.append(float(record[-1]))
 
@@ -1659,7 +1708,7 @@ class RAF:
             ax1.cla()
             ax1.set_xlabel('time(ns)', fontsize=5)
             ax1.set_ylabel("Tem", fontsize=5)
-            ax1.plot(np.array([l for l in range(len(Tem))])*(dt*inter),
+            ax1.plot(np.array([l for l in range(len(Tem))]) * (dt * inter),
                      Tem)
         plt.show()
 
@@ -1696,30 +1745,30 @@ class RAF:
         WD = "/home/caofan/RAF/"
         group = "crystal_WT"  # "dRafX6"
         temperatures = ["300K", "344K", "384K"]
-        rmsd_mat = np.zeros(shape=(15,15), dtype=np.float32)
+        rmsd_mat = np.zeros(shape=(15, 15), dtype=np.float32)
         paths = []
         names = []
         serial = 5
         for temperature in temperatures:
-            for k in range(1, serial+1):
+            for k in range(1, serial + 1):
                 paths.append(WD
-                            +'{0}/{1}/{2}/'.format(group, temperature, k))
+                             + '{0}/{1}/{2}/'.format(group, temperature, k))
                 names.append("{0}/{1}/{2}".format(group, temperature, k))
 
         for p in range(len(paths)):
             path1 = paths[p]
-            for q in range(p+1, len(paths)):
+            for q in range(p + 1, len(paths)):
                 path2 = paths[q]
-                rmsd_mat[p][q] = self.rmsd_between(path1=path1+"pro_ave.pdb", path2=path2+"pro_ave.pdb", part=part)
+                rmsd_mat[p][q] = self.rmsd_between(path1=path1 + "pro_ave.pdb", path2=path2 + "pro_ave.pdb", part=part)
 
         print(rmsd_mat)
-        np.save("./rmsd_{0}_{1}.npy".format(group, "BB" if part==4 else "SC"), rmsd_mat)
+        np.save("./rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), rmsd_mat)
 
-        rmsd_mat = np.load("./rmsd_{0}_{1}.npy".format(group, "BB" if part==4 else "SC"), allow_pickle=True)
+        rmsd_mat = np.load("./rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), allow_pickle=True)
         df = pd.DataFrame(rmsd_mat)
         df.columns = names
         df.index = names
-        df.to_csv("./rmsd_{0}_{1}.csv".format(group, "BB" if part==4 else "SC"))
+        df.to_csv("./rmsd_{0}_{1}.csv".format(group, "BB" if part == 4 else "SC"))
 
     def self_rmsd(self):
         part = 4  # 4 for backbone(BB); 8 for sidechain(SC) in most cases
@@ -1731,14 +1780,15 @@ class RAF:
         for temperature in range(len(temperatures)):
             for k in range(1, serial + 1):
                 path = WD + '{0}/{1}/{2}/'.format(group, temperatures[temperature], k)
-                rmsd_mat[temperature][k-1] = self.rmsd_between(path1=path + "md{0}.tpr".format(temperatures[temperature]), path2=path + "pro_ave.pdb", part=part)
+                rmsd_mat[temperature][k - 1] = self.rmsd_between(
+                    path1=path + "md{0}.tpr".format(temperatures[temperature]), path2=path + "pro_ave.pdb", part=part)
 
         print(rmsd_mat)
         np.save("./self_rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), rmsd_mat)
 
         rmsd_mat = np.load("./self_rmsd_{0}_{1}.npy".format(group, "BB" if part == 4 else "SC"), allow_pickle=True)
         df = pd.DataFrame(rmsd_mat)
-        df.columns = [k+1 for k in range(serial)]
+        df.columns = [k + 1 for k in range(serial)]
         df.index = temperatures
         df.to_csv("./self_rmsd_{0}_{1}.csv".format(group, "BB" if part == 4 else "SC"))
 
@@ -1751,7 +1801,7 @@ class RAF:
         filename = "rmsd_dRafX6_SC"
         path = WD + dirname
 
-        data = np.load(path+filename+".npy")
+        data = np.load(path + filename + ".npy")
         fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.set_title('rmsd_heatmap', fontsize=20)
@@ -1761,7 +1811,7 @@ class RAF:
         # add the color scale bar on the right
         plt.colorbar(im)
         # plt.show()
-        plt.savefig(WD+dirname+filename+".png")
+        plt.savefig(WD + dirname + filename + ".png")
 
     def read_gyrate_gmx(self, path):
         # path = "/Users/erik/Desktop/Pareto/reverse/4th/"
@@ -1779,8 +1829,165 @@ class RAF:
                     frame += 1
         return gyrate
 
+    def read_stride_single(self, path):
+        # count = {"H": 0, "G": 0, "I": 0, "E": 0, "B": 0, "T": 0, "C": 0}
+        sec_stru = []
+        with open(path, 'r') as file:
+            for i in file.readlines():
+                record = i.strip().split()
+                if record[0] == "ASG":
+                    sec_stru.append(["B" if record[5] == "b" else record[5]][0])
+        file.close()
+
+        """for letter in sec_stru:
+            count[letter] += 1"""
+
+        # print(sec_stru)
+
+        return sec_stru
+
+    def collect_sec_stru(self, group, T, reps, frames):
+        frames = frames  # +1, # number for each rep
+        seq_len = 78
+        interval = frames / 50  # every 1ns
+        path = "/home/fancao/RAF/{1}/{2}K/{3}/stride_sec_stru/md{0}.txt"
+        fig = plt.subplot(111)
+        for rep in range(len(reps)):
+            for i in range(int(interval)):
+                sec_stru_group = []
+                count = {"H": np.zeros(seq_len),  # red
+                         "G": np.zeros(seq_len),  # red
+                         "I": np.zeros(seq_len),  # red
+                         "E": np.zeros(seq_len),  # blue
+                         "B": np.zeros(seq_len),  # blue
+                         "T": np.zeros(seq_len),  # black
+                         "C": np.zeros(seq_len)}  # brown
+                for j in range(int(50 * i), int(50 * (i + 1))):
+                    # print(int((frames / interval) * i), int((frames / interval) * (i + 1)))
+                    # print(path.format(j, group, T, rep))
+                    sec_stru_group.append(self.read_stride_single(path.format(j, group, T, reps[rep])))
+
+                for sec_stru in sec_stru_group:
+                    for s in range(seq_len):
+                        count[sec_stru[s]][s] += 1
+                # print(count)
+
+                sec_stru_deter = []
+                for s in range(seq_len):
+                    maximum = 0
+                    current_sec_stru = ""
+                    for char in list(count.keys()):
+                        if count[char][s] > maximum:
+                            maximum = count[char][s]
+                            current_sec_stru = char
+                    sec_stru_deter.append(current_sec_stru)
+
+                # print(sec_stru_deter)
+
+                for s in range(seq_len):
+                    col = "black"
+                    if sec_stru_deter[s] in ["H", "G", "I"]:
+                        col = "red"
+                    if sec_stru_deter[s] == "T":
+                        col = "black"
+                    if sec_stru_deter[s] == "C":
+                        col = "brown"
+                    if sec_stru_deter[s] in ["E", "B"]:
+                        col = "blue"
+                    fig.fill_between([i + interval * rep, i + 1 + interval * rep], s, s + 1, facecolor=col, alpha=.9)
+
+            # fig.xaxis.set_major_locator(MultipleLocator(30))  # 设置y主坐标间隔 1
+            # fig.yaxis.set_major_locator(MultipleLocator(20))  # 设置y主坐标间隔 1
+        plt.xlim(0, interval * len(reps))
+        plt.ylim(0, 80)
+        # fig.xaxis.grid(True, which='major')
+        # fig.yaxis.grid(True, which='major')
+
+        plt.show()
+
+        # for letter in sec_stru_group:
+        # count[letter] += 1
+
+        # return sec_stru_sum
+
+    def monitor_atom_dis(self, group, T, reps, atom1, atom2, frames):
+        # atom的表示形式: '54-ALA-N-1'
+        frames = frames  # number for each rep
+        distances = []
+        work_dir = "/home/fancao/RAF/"
+        pdb_path = "{1}/{2}K/{3}/frame_pbc/md{0}.pdb"
+        for rep in reps:
+            for f in range(frames):
+                cors, names = self.readHeavyAtom_singleChain(work_dir + pdb_path.format(f, group, T, rep))
+                for index in range(len(cors)):
+                    if names[index] == atom1:
+                        cor1 = cors[index]
+                    if names[index] == atom2:
+                        cor2 = cors[index]
+                distances.append(np.sqrt(np.sum(np.power(cor1 - cor2, 2))))
+        reps_name = "_".join(reps)
+        np.save(work_dir + "monitor/{0}_{1}_{2}_{3}_{4}_dis.npy".format(group, T, reps_name, atom1, atom2),
+                np.array(distances))
+        return distances
+
+    def plot_monitor_data(self, group, T, reps, atom1, atom2):
+        work_dir = "/home/fancao/RAF/"
+        reps_name = "_".join(reps)
+        D = np.load(work_dir + "monitor/{0}_{1}_{2}_{3}_{4}_dis.npy".format(group, T, reps_name, atom1, atom2))
+        frames = len(D)
+        interval = int(frames / 50)
+        D_average = []
+        for p in range(50):
+            D_average.append(np.mean(D[p * interval:(p + 1) * interval]))
+
+        # print(len(D_average))
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('Time(ns)', fontsize=20)
+        ax1.set_ylabel("Distance(Å)", fontsize=20)
+        ax1.bar(range(0, len(D_average) * int(interval / 50), int(interval / 50)), D_average, width=60)
+        plt.show()
+
+    def collect_rmsd(self, group, T, reps):
+        path = "/home/fancao/RAF/{0}/{1}K/{2}/rmsd_500ns.xvg"  # actually not only 500ns
+        frame = 0
+        rms = []
+        time = []
+        interval = 0.02
+        for rep in reps:
+            path_rep = path.format(group, T, rep)
+            with open(path_rep) as f:
+                for j in f.readlines():
+                    record = j.strip()
+                    if len(
+                            record) == 0:  # When a blank line is encountered, it means iterating to the end of the file and jumping out of the loop
+                        break
+                    if record[0] not in ["#", "@"]:
+                        li = record.split()
+                        rms.append(float(li[1]) * 10)  # Å
+                        time.append(frame * interval)  # ns
+                        frame += 1
+
+        fig = plt.figure(num=1, figsize=(15, 8), dpi=80)
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_title('Figure', fontsize=20)
+        ax1.set_xlabel('ns', fontsize=20)
+        ax1.set_ylabel("RMSD(Å)", fontsize=20)
+        ax1.scatter(time, rms, s=.8)
+        print(frame)
+        plt.show()
+
+        # for letter in sec_stru_group:
+        # count[letter] += 1
+
+        # return sec_stru_sum
+
+
 # print(sys.argv[1])
 raf = RAF()
+# raf.collect_sec_stru()
+# raf.read_stride_single("/Users/erik/Desktop/stride.txt")
 # raf.rmsd_plot_gmx()
 # raf.repidx()  # All temperatures experienced by a channel
 # raf.crdidx()  # All channels experienced by a temperature
@@ -1789,7 +1996,7 @@ raf = RAF()
 # raf.readHeavyAtom("/Users/erik/Desktop/RAF/WT_crystal.pdb")
 # raf.cnumvtime()
 # raf.gyrate_plot_gmx()
-raf.find_lowest_ESeq()
+# raf.find_lowest_ESeq()
 # raf.hbond_plot_gmx()
 # cor, name = raf.readHeavyAtom_singleChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb")
 # Phi = raf.gather_dihedral_atom_singChain("/Users/erik/Desktop/RAF/cry_repacking/test/4/ff.pdb", type="Phi")
